@@ -18,7 +18,7 @@ Underscores (_s) スターターテーマをベースにした ikuty.com風カ�
 ### Docker サービス
 
 - **wordpress**: WordPress サイト（`http://localhost:8000` でアクセス可能）
-- **db**: MySQL 5.7 データベース
+- **db**: MySQL 8.3 データベース
 - **phpmyadmin**: データベース管理インターフェース（`http://localhost:8081` でアクセス可能）
 
 ### カスタムテーマ (`original-theme/`)
