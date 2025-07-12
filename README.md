@@ -1,6 +1,8 @@
 # WordPress Docker 開発環境
 
-Underscores (_s) スターターテーマをベースにしたカスタムテーマを含む、Docker ベースの WordPress 開発環境です。
+Underscores (_s) スターターテーマをベースにした ikuty.com風カスタムテーマを含む、Docker ベースの WordPress 開発環境です。
+
+<img src="./screenshot.png" alt="ikuty.com風テーマ" width="600"/>
 
 ## プロジェクト概要
 
