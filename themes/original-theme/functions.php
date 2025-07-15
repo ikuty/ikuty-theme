@@ -736,3 +736,64 @@ function popular_topics_shortcode( $atts ) {
 	return $output;
 }
 add_shortcode( 'popular_topics', 'popular_topics_shortcode' );
+
+/**
+ * Add OGP and social media meta tags to post pages
+ */
+function add_ogp_meta_tags() {
+	if ( is_single() ) {
+		global $post;
+		
+		// Basic OGP tags
+		$title = get_the_title();
+		$description = get_the_excerpt() ? get_the_excerpt() : wp_trim_words( get_the_content(), 55 );
+		$url = get_permalink();
+		$site_name = get_bloginfo( 'name' );
+		
+		// Get featured image
+		$image = '';
+		if ( has_post_thumbnail() ) {
+			$image = get_the_post_thumbnail_url( null, 'large' );
+		} else {
+			$image = get_template_directory_uri() . '/img/default.png';
+		}
+		
+		echo '<meta property="og:title" content="' . esc_attr( $title ) . '" />' . "\n";
+		echo '<meta property="og:description" content="' . esc_attr( $description ) . '" />' . "\n";
+		echo '<meta property="og:url" content="' . esc_url( $url ) . '" />' . "\n";
+		echo '<meta property="og:site_name" content="' . esc_attr( $site_name ) . '" />' . "\n";
+		echo '<meta property="og:type" content="article" />' . "\n";
+		echo '<meta property="og:image" content="' . esc_url( $image ) . '" />' . "\n";
+		echo '<meta property="og:locale" content="ja_JP" />' . "\n";
+		
+		// Twitter Card tags
+		echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
+		echo '<meta name="twitter:site" content="@tw_ikuty" />' . "\n";
+		echo '<meta name="twitter:creator" content="@tw_ikuty" />' . "\n";
+		echo '<meta name="twitter:title" content="' . esc_attr( $title ) . '" />' . "\n";
+		echo '<meta name="twitter:description" content="' . esc_attr( $description ) . '" />' . "\n";
+		echo '<meta name="twitter:image" content="' . esc_url( $image ) . '" />' . "\n";
+		
+		// Facebook specific tags
+		echo '<meta property="fb:app_id" content="" />' . "\n";
+		echo '<meta property="article:author" content="' . esc_attr( get_the_author() ) . '" />' . "\n";
+		echo '<meta property="article:published_time" content="' . esc_attr( get_the_date( 'c' ) ) . '" />' . "\n";
+		echo '<meta property="article:modified_time" content="' . esc_attr( get_the_modified_date( 'c' ) ) . '" />' . "\n";
+		
+		// Hatena Bookmark tags
+		echo '<meta name="hatena:bookmark" content="nocomment" />' . "\n";
+		
+		// BlueSky (uses standard OGP tags)
+		// Additional meta tags for better social sharing
+		echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
+		
+		// Post tags for article:tag
+		$tags = get_the_tags();
+		if ( $tags ) {
+			foreach ( $tags as $tag ) {
+				echo '<meta property="article:tag" content="' . esc_attr( $tag->name ) . '" />' . "\n";
+			}
+		}
+	}
+}
+add_action( 'wp_head', 'add_ogp_meta_tags' );
