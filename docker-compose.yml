@@ -28,6 +28,7 @@ services:
        - ./themes/original-theme:/var/www/html/wp-content/themes/original-theme
        - ./plugins:/var/www/html/wp-content/plugins
        - ./uploads:/var/www/html/wp-content/uploads
+       - ./wordpress-config/php.ini:/usr/local/etc/php/conf.d/uploads.ini
 
    phpmyadmin:
       depends_on:
