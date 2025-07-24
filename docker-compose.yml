@@ -26,9 +26,9 @@ services:
        WORDPRESS_DB_NAME: wordpress
      volumes:
        - ./themes/original-theme:/var/www/html/wp-content/themes/original-theme
-       - ./plugins:/var/www/html/wp-content/plugins
-       - ./uploads:/var/www/html/wp-content/uploads
        - ./wordpress-config/php.ini:/usr/local/etc/php/conf.d/uploads.ini
+       - plugin_data:/var/www/html/wp-content/plugins:rw
+       - upload_data:/var/www/html/wp-content/uploads:rw
 
    phpmyadmin:
       depends_on:
@@ -39,4 +39,9 @@ services:
         - "8081:80"
 
 volumes:
-    db_data: {}
+    db_data:
+      driver: local
+    plugin_data:
+      driver: local
+    upload_data:
+      driver: local
