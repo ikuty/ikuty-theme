@@ -797,3 +797,74 @@ function add_ogp_meta_tags() {
 	}
 }
 add_action( 'wp_head', 'add_ogp_meta_tags' );
+
+/**
+ * clink shortcode
+ * Create a custom link card with image, title, and excerpt
+ */
+function clink_shortcode( $atts ) {
+	$atts = shortcode_atts( array(
+		'implicit' => '',
+		'imgurl' => '',
+		'url' => '',
+		'title' => '',
+		'excerpt' => ''
+	), $atts );
+	
+	$output = "";
+	if ( empty( $atts['implicit'])) {
+		// Validate required parameters
+		if ( empty( $atts['url'] ) ) {
+			return '<p>urlが指定されていません。</p>';
+		}
+		// Set default values
+		$url = esc_url( $atts['url'] );
+		$post_id = url_to_postid($url);
+		$post = get_post($post_id);
+
+		// T.B.A.
+	} else {
+		// Validate required parameters
+		if ( empty( $atts['imgurl'] ) ) {
+			return '<p>imgurlが指定されていません。</p>';
+		}
+		if ( empty( $atts['url'] ) ) {
+			return '<p>urlが指定されていません。</p>';
+		}
+		if ( empty( $atts['title'] ) ) {
+			return '<p>titleが指定されていません。</p>';
+		}
+		if ( empty( $atts['excerpt'] ) ) {
+			return '<p>titleが指定されていません。</p>';
+		}
+
+		// Set default values
+		$url = esc_url( $atts['url'] );
+		$imgurl = esc_url( $atts['imgurl'] );
+		$title = ! empty( $atts['title'] ) ? esc_html( $atts['title'] ) : 'リンク';
+		$excerpt = ! empty( $atts['excerpt'] ) ? esc_html( $atts['excerpt'] ) : '';
+		$implicit = sanitize_text_field( $atts['implicit'] );
+		
+		// Process implicit parameter (true/false)
+		$is_implicit = filter_var( $implicit, FILTER_VALIDATE_BOOLEAN );
+		
+		// Build the output HTML
+		$container_class = $is_implicit ? 'clink-container clink-implicit' : 'clink-container';
+		$output = '<div class="' . $container_class . '">';
+		$output .= '<div class="clink-image">';
+		$output .= '<a class="clink-image-link" href="' . $url . '">';
+		$output .= '<img src="' . $imgurl . '" alt="' . $title . '" loading="lazy" />';
+		$output .= '</a>';
+		$output .= '</div>';
+		$output .= '<div class="clink-content">';
+		$output .= '<a class="clink-title" href="'. $url .'">' . $title . '</a>';
+		if ( ! empty( $excerpt ) ) {
+			$output .= '<p class="clink-excerpt">' . $excerpt . '</p>';
+		}
+		$output .= '</div>';
+		$output .= '</div>';
+	}
+
+	return $output;
+}
+add_shortcode( 'clink', 'clink_shortcode' );
