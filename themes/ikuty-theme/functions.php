@@ -1,10 +1,10 @@
 <?php
 /**
- * original-theme functions and definitions
+ * ikuty-theme functions and definitions
  *
  * @link https://developer.wordpress.org/themes/basics/theme-functions/
  *
- * @package original-theme
+ * @package ikuty-theme
  */
 
 if ( ! defined( '_S_VERSION' ) ) {
@@ -19,14 +19,14 @@ if ( ! defined( '_S_VERSION' ) ) {
  * runs before the init hook. The init hook is too late for some features, such
  * as indicating support for post thumbnails.
  */
-function original_theme_setup() {
+function ikuty_theme_setup() {
 	/*
 		* Make theme available for translation.
 		* Translations can be filed in the /languages/ directory.
-		* If you're building a theme based on original-theme, use a find and replace
-		* to change 'original-theme' to the name of your theme in all the template files.
+		* If you're building a theme based on ikuty-theme, use a find and replace
+		* to change 'ikuty-theme' to the name of your theme in all the template files.
 		*/
-	load_theme_textdomain( 'original-theme', get_template_directory() . '/languages' );
+	load_theme_textdomain( 'ikuty-theme', get_template_directory() . '/languages' );
 
 	// Add default posts and comments RSS feed links to head.
 	add_theme_support( 'automatic-feed-links' );
@@ -55,8 +55,8 @@ function original_theme_setup() {
 	// This theme uses wp_nav_menu() in multiple locations.
 	register_nav_menus(
 		array(
-			'menu-1'     => esc_html__( 'Primary', 'original-theme' ),
-			'footer-menu' => esc_html__( 'Footer Menu', 'original-theme' ),
+			'menu-1'     => esc_html__( 'Primary', 'ikuty-theme' ),
+			'footer-menu' => esc_html__( 'Footer Menu', 'ikuty-theme' ),
 		)
 	);
 
@@ -81,7 +81,7 @@ function original_theme_setup() {
 	add_theme_support(
 		'custom-background',
 		apply_filters(
-			'original_theme_custom_background_args',
+			'ikuty_theme_custom_background_args',
 			array(
 				'default-color' => 'ffffff',
 				'default-image' => '',
@@ -105,22 +105,22 @@ function original_theme_setup() {
 	// Add theme support for block editor color palette
 	add_theme_support( 'editor-color-palette', array(
 		array(
-			'name'  => __( 'Primary Blue', 'original-theme' ),
+			'name'  => __( 'Primary Blue', 'ikuty-theme' ),
 			'slug'  => 'primary-blue',
 			'color' => '#3498db',
 		),
 		array(
-			'name'  => __( 'Dark Blue Gray', 'original-theme' ),
+			'name'  => __( 'Dark Blue Gray', 'ikuty-theme' ),
 			'slug'  => 'dark-blue-gray',
 			'color' => '#2c3e50',
 		),
 		array(
-			'name'  => __( 'Light Gray', 'original-theme' ),
+			'name'  => __( 'Light Gray', 'ikuty-theme' ),
 			'slug'  => 'light-gray',
 			'color' => '#7f8c8d',
 		),
 		array(
-			'name'  => __( 'Background Gray', 'original-theme' ),
+			'name'  => __( 'Background Gray', 'ikuty-theme' ),
 			'slug'  => 'background-gray',
 			'color' => '#fafbfc',
 		),
@@ -141,7 +141,7 @@ function original_theme_setup() {
 		)
 	);
 }
-add_action( 'after_setup_theme', 'original_theme_setup' );
+add_action( 'after_setup_theme', 'ikuty_theme_setup' );
 
 /**
  * Set the content width in pixels, based on the theme's design and stylesheet.
@@ -150,22 +150,22 @@ add_action( 'after_setup_theme', 'original_theme_setup' );
  *
  * @global int $content_width
  */
-function original_theme_content_width() {
-	$GLOBALS['content_width'] = apply_filters( 'original_theme_content_width', 640 );
+function ikuty_theme_content_width() {
+	$GLOBALS['content_width'] = apply_filters( 'ikuty_theme_content_width', 640 );
 }
-add_action( 'after_setup_theme', 'original_theme_content_width', 0 );
+add_action( 'after_setup_theme', 'ikuty_theme_content_width', 0 );
 
 /**
  * Register widget area.
  *
  * @link https://developer.wordpress.org/themes/functionality/sidebars/#registering-a-sidebar
  */
-function original_theme_widgets_init() {
+function ikuty_theme_widgets_init() {
 	register_sidebar(
 		array(
-			'name'          => esc_html__( 'Main Sidebar', 'original-theme' ),
+			'name'          => esc_html__( 'Main Sidebar', 'ikuty-theme' ),
 			'id'            => 'sidebar-1',
-			'description'   => esc_html__( 'Add widgets here.', 'original-theme' ),
+			'description'   => esc_html__( 'Add widgets here.', 'ikuty-theme' ),
 			'before_widget' => '<section id="%1$s" class="widget %2$s">',
 			'after_widget'  => '</section>',
 			'before_title'  => '<h2 class="widget-title">',
@@ -175,9 +175,9 @@ function original_theme_widgets_init() {
 	
 	register_sidebar(
 		array(
-			'name'          => esc_html__( 'Pickup Section', 'original-theme' ),
+			'name'          => esc_html__( 'Pickup Section', 'ikuty-theme' ),
 			'id'            => 'sidebar-pickup',
-			'description'   => esc_html__( 'Featured content sections like Daily Learning, Deep Learning, etc.', 'original-theme' ),
+			'description'   => esc_html__( 'Featured content sections like Daily Learning, Deep Learning, etc.', 'ikuty-theme' ),
 			'before_widget' => '<section id="%1$s" class="widget pickup-widget %2$s">',
 			'after_widget'  => '</section>',
 			'before_title'  => '<h3 class="pickup-title">',
@@ -185,14 +185,14 @@ function original_theme_widgets_init() {
 		)
 	);
 }
-add_action( 'widgets_init', 'original_theme_widgets_init' );
+add_action( 'widgets_init', 'ikuty_theme_widgets_init' );
 
 /**
  * Enqueue scripts and styles.
  */
-function original_theme_scripts() {
-	wp_enqueue_style( 'original-theme-style', get_stylesheet_uri(), array(), _S_VERSION );
-	wp_style_add_data( 'original-theme-style', 'rtl', 'replace' );
+function ikuty_theme_scripts() {
+	wp_enqueue_style( 'ikuty-theme-style', get_stylesheet_uri(), array(), _S_VERSION );
+	wp_style_add_data( 'ikuty-theme-style', 'rtl', 'replace' );
 
 	// Conditionally load Prism.js only on single posts with code blocks
 	if ( is_single() || is_page() ) {
@@ -208,19 +208,19 @@ function original_theme_scripts() {
 		}
 	}
 
-	wp_enqueue_script( 'original-theme-navigation', get_template_directory_uri() . '/js/navigation.js', array(), _S_VERSION, true );
+	wp_enqueue_script( 'ikuty-theme-navigation', get_template_directory_uri() . '/js/navigation.js', array(), _S_VERSION, true );
 	
 	// Only load tech features on single posts
 	if ( is_single() ) {
-		wp_enqueue_script( 'original-theme-tech', get_template_directory_uri() . '/js/tech-features.js', array('jquery'), _S_VERSION, true );
-		wp_enqueue_script( 'original-theme-floating-banner', get_template_directory_uri() . '/js/floating-banner.js', array('jquery'), _S_VERSION, true );
+		wp_enqueue_script( 'ikuty-theme-tech', get_template_directory_uri() . '/js/tech-features.js', array('jquery'), _S_VERSION, true );
+		wp_enqueue_script( 'ikuty-theme-floating-banner', get_template_directory_uri() . '/js/floating-banner.js', array('jquery'), _S_VERSION, true );
 	}
 
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
 		wp_enqueue_script( 'comment-reply' );
 	}
 }
-add_action( 'wp_enqueue_scripts', 'original_theme_scripts' );
+add_action( 'wp_enqueue_scripts', 'ikuty_theme_scripts' );
 
 /**
  * アイキャッチを設定しない場合、デフォルトのアイキャッチ画像を使用する。
