@@ -821,8 +821,18 @@ function clink_shortcode( $atts ) {
 		$url = esc_url( $atts['url'] );
 		$post_id = url_to_postid($url);
 		$post = get_post($post_id);
-
-		// T.B.A.
+		$thumbnail_id = get_post_thumbnail_id($post_id);
+		if ($humbnail_id === 0) {
+			$thumbnail_url = get_template_directory_uri() . '/img/default.png';
+		} else {
+			$thumbnail_url = wp_get_attachment_image_url($thumbnail_id, 'square-360', array('loading'=>'lazy'));
+		}
+		$title = esc_html(get_the_title($post_id));
+		if (empty($post->post_excerpt)) {
+			$excerpt = mb_substr($post->post_content,0,300);
+		} else {
+			$excerpt = $post->post_excerpt;
+		}
 	} else {
 		// Validate required parameters
 		if ( empty( $atts['imgurl'] ) ) {
@@ -840,30 +850,29 @@ function clink_shortcode( $atts ) {
 
 		// Set default values
 		$url = esc_url( $atts['url'] );
-		$imgurl = esc_url( $atts['imgurl'] );
+		$thumbnail_url = esc_url( $atts['imgurl'] );
 		$title = ! empty( $atts['title'] ) ? esc_html( $atts['title'] ) : 'リンク';
 		$excerpt = ! empty( $atts['excerpt'] ) ? esc_html( $atts['excerpt'] ) : '';
 		$implicit = sanitize_text_field( $atts['implicit'] );
-		
 		// Process implicit parameter (true/false)
-		$is_implicit = filter_var( $implicit, FILTER_VALIDATE_BOOLEAN );
-		
-		// Build the output HTML
-		$container_class = $is_implicit ? 'clink-container clink-implicit' : 'clink-container';
-		$output = '<div class="' . $container_class . '">';
-		$output .= '<div class="clink-image">';
-		$output .= '<a class="clink-image-link" href="' . $url . '">';
-		$output .= '<img src="' . $imgurl . '" alt="' . $title . '" loading="lazy" />';
-		$output .= '</a>';
-		$output .= '</div>';
-		$output .= '<div class="clink-content">';
-		$output .= '<a class="clink-title" href="'. $url .'">' . $title . '</a>';
-		if ( ! empty( $excerpt ) ) {
-			$output .= '<p class="clink-excerpt">' . $excerpt . '</p>';
-		}
-		$output .= '</div>';
-		$output .= '</div>';
+		$is_implicit = filter_var( $implicit, FILTER_VALIDATE_BOOLEAN );		
 	}
+
+	// Build the output HTML
+	$output = '<div class="clink-container">';
+	$output .= '<div class="clink-image">';
+	$output .= '<a class="clink-image-link" href="' . $url . '">';
+	$output .= '<img src="' . $thumbnail_url . '" alt="' . $title . '" loading="lazy" />';
+	$output .= '</a>';
+	$output .= '</div>';
+	$output .= '<div class="clink-content">';
+	$output .= '<a class="clink-title" href="'. $url .'">' . $title . '</a>';
+	if ( ! empty( $excerpt ) ) {
+		$output .= '<p class="clink-excerpt">' . $excerpt . '</p>';
+	}
+	$output .= '</div>';
+	$output .= '</div>';
+
 
 	return $output;
 }
