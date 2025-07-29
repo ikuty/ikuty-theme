@@ -829,10 +829,14 @@ function clink_shortcode( $atts ) {
 		}
 		$title = esc_html(get_the_title($post_id));
 		if (empty($post->post_excerpt)) {
-			$excerpt = mb_substr($post->post_content,0,300);
+			$raw_excerpt = mb_substr($post->post_content,0,300);
 		} else {
-			$excerpt = $post->post_excerpt;
+			$raw_excerpt = $post->post_excerpt;
 		}
+		// Remove shortcodes and HTML tags
+		$clean_excerpt = strip_shortcodes( $raw_excerpt );
+		$clean_excerpt = strip_tags( $clean_excerpt );
+		$excerpt = esc_html( $clean_excerpt );
 	} else {
 		// Validate required parameters
 		if ( empty( $atts['imgurl'] ) ) {
@@ -852,7 +856,12 @@ function clink_shortcode( $atts ) {
 		$url = esc_url( $atts['url'] );
 		$thumbnail_url = esc_url( $atts['imgurl'] );
 		$title = ! empty( $atts['title'] ) ? esc_html( $atts['title'] ) : 'リンク';
-		$excerpt = ! empty( $atts['excerpt'] ) ? esc_html( $atts['excerpt'] ) : '';
+		// Strip shortcodes and HTML tags from excerpt
+		$raw_excerpt = ! empty( $atts['excerpt'] ) ? $atts['excerpt'] : '';
+		// Remove shortcodes and HTML tags
+		$clean_excerpt = strip_shortcodes( $raw_excerpt );
+		$clean_excerpt = strip_tags( $clean_excerpt );
+		$excerpt = esc_html( $clean_excerpt );
 		$implicit = sanitize_text_field( $atts['implicit'] );
 		// Process implicit parameter (true/false)
 		$is_implicit = filter_var( $implicit, FILTER_VALIDATE_BOOLEAN );		
