@@ -30,7 +30,7 @@
 						<?php foreach ( $category_hierarchy as $parent_category ) : ?>
 							<div class="category-tree">
 								<ul class="category-list">
-									<li class="category-item parent-category">
+									<li class="footer-category-item parent-category">
 										<a href="<?php echo esc_url( get_category_link( $parent_category->term_id ) ); ?>" class="category-link">
 											<?php echo esc_html( $parent_category->name ); ?>
 											<span class="category-count">(<?php echo esc_html( $parent_category->total_count ); ?>)</span>
@@ -38,7 +38,7 @@
 									</li>
 									<?php if ( ! empty( $parent_category->children ) ) : ?>
 										<?php foreach ( $parent_category->children as $child_category ) : ?>
-											<li class="category-item child-category">
+											<li class="footer-category-item child-category">
 												<a href="<?php echo esc_url( get_category_link( $child_category->term_id ) ); ?>" class="category-link">
 													<?php echo esc_html( $child_category->name ); ?>
 													<span class="category-count">(<?php echo esc_html( $child_category->total_count ); ?>)</span>
@@ -46,7 +46,7 @@
 											</li>
 											<?php if ( ! empty( $child_category->children ) ) : ?>
 												<?php foreach ( $child_category->children as $grandchild_category ) : ?>
-													<li class="category-item grandchild-category">
+													<li class="footer-category-item grandchild-category">
 														<a href="<?php echo esc_url( get_category_link( $grandchild_category->term_id ) ); ?>" class="category-link">
 															<?php echo esc_html( $grandchild_category->name ); ?>
 															<span class="category-count">(<?php echo esc_html( $grandchild_category->count ); ?>)</span>
