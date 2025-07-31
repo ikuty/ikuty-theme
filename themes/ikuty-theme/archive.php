@@ -31,7 +31,7 @@ get_header();
 							
 							<?php
 							// Display tags list with custom order (only top page display tags)
-							$tags = get_top_page_tags( array(
+							$tags = get_tags( array(
 								'hide_empty' => true,
 							) );
 							
