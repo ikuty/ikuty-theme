@@ -30,24 +30,34 @@ get_header();
 							</header><!-- .page-header -->
 							
 							<?php
-							// Display tags list with custom order (only top page display tags)
-							$tags = get_tags( array(
+							// Display categories list
+							$categories = get_categories( array(
 								'hide_empty' => true,
 							) );
 							
-							if ( ! empty( $tags ) ) :
+							// Calculate total posts count across all categories
+							$total_posts = 0;
+							foreach ( $categories as $category ) {
+								$total_posts += $category->count;
+							}
 							?>
-								<div class="tags-list-section">
-									<div class="tags-container">
-										<?php foreach ( $tags as $tag ) : ?>
-											<a href="<?php echo esc_url( get_tag_link( $tag->term_id ) ); ?>" class="tag-item">
-												<?php echo esc_html( $tag->name ); ?>
-												<span class="tag-count">(<?php echo esc_html( $tag->count ); ?>)</span>
-											</a>
-										<?php endforeach; ?>
+								<div class="categories-list-section">
+									<div class="categories-container">
+										<!-- Add "All" item at the beginning -->
+										<a href="/article" class="category-item">
+											全て
+											<span class="category-count">(<?php echo esc_html( $total_posts ); ?>)</span>
+										</a>
+										<?php if ( ! empty( $categories ) ) : ?>
+											<?php foreach ( $categories as $category ) : ?>
+												<a href="<?php echo esc_url( get_category_link( $category->term_id ) ); ?>" class="category-item">
+													<?php echo esc_html( $category->name ); ?>
+													<span class="category-count">(<?php echo esc_html( $category->count ); ?>)</span>
+												</a>
+											<?php endforeach; ?>
+										<?php endif; ?>
 									</div>
 								</div>
-							<?php endif; ?>
 							
 							<?php
 							/* Start the Loop */

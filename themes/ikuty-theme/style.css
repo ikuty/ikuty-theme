@@ -1453,19 +1453,22 @@ textarea {
 
 
 /* Tags list section */
-.tags-list-section {
+.tags-list-section,
+.categories-list-section {
 	padding: 1.0em;
 	margin-bottom: 1.5rem;
 	background-color: #f3f3f3;
 }
 
-.tags-container {
+.tags-container,
+.categories-container {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem;
 }
 
-.tag-item {
+.tag-item,
+.category-item {
 	display: inline-block;
 	padding: 0.5rem;
 	background-color: #ffffff;
@@ -1478,17 +1481,20 @@ textarea {
 	transition: all 0.2s ease;
 }
 
-.tag-item:hover {
+.tag-item:hover,
+.category-item:hover {
 	color: rgb(169,60,54);
 }
 
-.tag-count {
+.tag-count,
+.category-count {
 	font-weight: 400;
 	color: #2c3e50;
 	margin-left: 0.25rem;
 }
 
-.tag-item:hover .tag-count {
+.tag-item:hover .tag-count,
+.category-item:hover .category-count {
 	color: rgb(169,60,54);
 }
 
