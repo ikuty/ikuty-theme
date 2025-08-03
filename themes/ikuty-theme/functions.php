@@ -886,3 +886,150 @@ function clink_shortcode( $atts ) {
 	return $output;
 }
 add_shortcode( 'clink', 'clink_shortcode' );
+
+/**
+ * Login History Monitoring
+ */
+
+// Record login attempt
+function ikuty_theme_record_login_attempt($user_login, $user) {
+    if (!is_a($user, 'WP_User')) {
+        return;
+    }
+
+    $ip_address = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+    $user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+    $time = current_time('mysql');
+
+    $logins = get_option('ikuty_theme_login_logs', []);
+    if (!is_array($logins)) {
+        $logins = [];
+    }
+
+    // Add new login log
+    $logins[] = [
+        'user' => $user_login,
+        'user_id' => $user->ID,
+        'ip' => $ip_address,
+        'user_agent' => $user_agent,
+        'time' => $time,
+        'status' => 'success'
+    ];
+
+    // Limit to 300 logs
+    if (count($logins) > 300) {
+        array_shift($logins);
+    }
+
+    update_option('ikuty_theme_login_logs', $logins);
+}
+add_action('wp_login', 'ikuty_theme_record_login_attempt', 10, 2);
+
+// Record failed login attempt
+function ikuty_theme_record_failed_login($username) {
+    $ip_address = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+    $user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+    $time = current_time('mysql');
+
+    $logins = get_option('ikuty_theme_login_logs', []);
+    if (!is_array($logins)) {
+        $logins = [];
+    }
+
+    // Add failed login log
+    $logins[] = [
+        'user' => $username,
+        'user_id' => 0,
+        'ip' => $ip_address,
+        'user_agent' => $user_agent,
+        'time' => $time,
+        'status' => 'failed'
+    ];
+
+    // Limit to 300 logs
+    if (count($logins) > 300) {
+        array_shift($logins);
+    }
+
+    update_option('ikuty_theme_login_logs', $logins);
+}
+add_action('wp_login_failed', 'ikuty_theme_record_failed_login');
+
+// Add submenu to admin
+function ikuty_theme_add_login_history_submenu() {
+    add_submenu_page(
+        'tools.php', 
+        'ログイン履歴', 
+        'ログイン履歴', 
+        'manage_options', 
+        'ikuty-login-history', 
+        'ikuty_theme_display_login_history'
+    );
+}
+add_action('admin_menu', 'ikuty_theme_add_login_history_submenu');
+
+// Display login history page
+function ikuty_theme_display_login_history() {
+    if (!current_user_can('manage_options')) {
+        wp_die(__('You do not have sufficient permissions to access this page.'));
+    }
+
+    $logins = get_option('ikuty_theme_login_logs', []);
+    $logins = array_reverse($logins); // Show newest first
+
+    echo '<div class="wrap">';
+    echo '<h1>ログイン履歴</h1>';
+    
+    if (empty($logins)) {
+        echo '<p>ログイン履歴がありません。</p>';
+    } else {
+        echo '<table class="widefat fixed striped">';
+        echo '<thead>';
+        echo '<tr>';
+        echo '<th style="width: 15%;">日時</th>';
+        echo '<th style="width: 15%;">ユーザー名</th>';
+        echo '<th style="width: 10%;">ステータス</th>';
+        echo '<th style="width: 15%;">IPアドレス</th>';
+        echo '<th style="width: 45%;">ユーザーエージェント</th>';
+        echo '</tr>';
+        echo '</thead>';
+        echo '<tbody>';
+        
+        foreach ($logins as $login) {
+            $status_color = $login['status'] === 'success' ? '#46b450' : '#dc3232';
+            $status_text = $login['status'] === 'success' ? '成功' : '失敗';
+            
+            echo '<tr>';
+            echo '<td>' . esc_html($login['time']) . '</td>';
+            echo '<td>' . esc_html($login['user']) . '</td>';
+            echo '<td style="color: ' . $status_color . '; font-weight: bold;">' . $status_text . '</td>';
+            echo '<td>' . esc_html($login['ip']) . '</td>';
+            echo '<td title="' . esc_attr($login['user_agent']) . '">' . esc_html(mb_strimwidth($login['user_agent'], 0, 60, '...')) . '</td>';
+            echo '</tr>';
+        }
+        
+        echo '</tbody>';
+        echo '</table>';
+        
+        echo '<p style="margin-top: 20px;">最新の' . count($logins) . '件のログイン履歴を表示しています（最大300件まで保存）</p>';
+    }
+    
+    echo '</div>';
+}
+
+// Add CSS for login history page
+function ikuty_theme_login_history_admin_css() {
+    $screen = get_current_screen();
+    if ($screen && $screen->id === 'tools_page_ikuty-login-history') {
+        echo '<style>
+            .widefat th, .widefat td {
+                padding: 8px 10px;
+            }
+            .widefat td {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+        </style>';
+    }
+}
+add_action('admin_head', 'ikuty_theme_login_history_admin_css');
