@@ -274,6 +274,11 @@ require get_template_directory() . '/inc/tag-order.php';
 require get_template_directory() . '/inc/category-order.php';
 
 /**
+ * OGP Image Generator.
+ */
+require get_template_directory() . '/inc/ogp-image-generator.php';
+
+/**
  * Customizer additions.
  */
 require get_template_directory() . '/inc/customizer.php';
@@ -750,11 +755,18 @@ function add_ogp_meta_tags() {
 		$url = get_permalink();
 		$site_name = get_bloginfo( 'name' );
 		
-		// Get featured image
+		// Get OGP image (priority: custom OGP image > featured image > default)
 		$image = '';
-		if ( has_post_thumbnail() ) {
+		$ogp_image_id = get_post_meta( $post->ID, '_ogp_image_id', true );
+
+		if ( $ogp_image_id && wp_attachment_is_image( $ogp_image_id ) ) {
+			// Use custom OGP image if available
+			$image = wp_get_attachment_url( $ogp_image_id );
+		} elseif ( has_post_thumbnail() ) {
+			// Fallback to featured image
 			$image = get_the_post_thumbnail_url( null, 'large' );
 		} else {
+			// Fallback to default image
 			$image = get_template_directory_uri() . '/img/default.png';
 		}
 		
