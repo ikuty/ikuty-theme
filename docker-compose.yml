@@ -38,6 +38,21 @@ services:
       ports:
         - "8081:80"
 
+   wpcli:
+      depends_on:
+        - db
+        - wordpress
+      platform: linux/x86_64
+      image: wordpress:cli
+      volumes_from:
+        - wordpress
+      environment:
+        WORDPRESS_DB_HOST: db:3306
+        WORDPRESS_DB_USER: ${MYSQL_USER}
+        WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+        WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      user: "33:33"
+
 volumes:
     db_data:
       driver: local
