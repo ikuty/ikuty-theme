@@ -471,7 +471,11 @@ i {
 }
 
 blockquote {
-	margin: 0 1.5em;
+	border-left: 7px solid #2d2d2d;
+	background: #ebebeb;
+	margin: 1.5em 25px;
+	padding: 1px 10px;
+	quotes: "\201C""\201D""\2018""\2019";
 }
 
 address {
@@ -493,6 +497,7 @@ kbd,
 tt,
 var {
 	font-family: monaco, consolas, "Andale Mono", "DejaVu Sans Mono", monospace;
+	line-height: 1.3;
 }
 
 abbr,
@@ -1868,8 +1873,8 @@ pre {
 	padding: 1.5rem !important;
 	margin: 2rem 0;
 	overflow-x: auto;
-	font-size: 0.85rem;
-	line-height: 1.6;
+	font-size: 0.75rem;
+	line-height: 1.4;
 }
 
 .code-language {
@@ -2315,7 +2320,7 @@ select:focus {
     padding: 0.25em 0 0.25em .75em;
     font-size: 17px;
     line-height: 26px;
-    border-left: 6px solid #ffb111;	
+    border-left: 6px solid #ffb111;
 }
 
 .entry-content table {
@@ -2877,10 +2882,10 @@ select:focus {
 	.copy-code-btn {
 		right: 0.5rem;
 	}
-	
+
 	pre {
 		padding: 1rem !important;
-		font-size: 0.8rem;
+		font-size: 0.7rem;
 	}
 }
 
@@ -3168,5 +3173,27 @@ select:focus {
 	.clink-excerpt {
 		font-size: 13px;
 		-webkit-line-clamp: 6;
+	}
+}
+
+/*--------------------------------------------------------------
+# PC表示時の行間調整
+--------------------------------------------------------------*/
+/* PC表示時（769px以上）のみ本文の行間を1.5に調整 */
+@media (min-width: 769px) {
+	body {
+		line-height: 1.5;
+	}
+
+	p {
+		line-height: 1.5;
+	}
+
+	button,
+	input,
+	select,
+	optgroup,
+	textarea {
+		line-height: 1.5;
 	}
 }
