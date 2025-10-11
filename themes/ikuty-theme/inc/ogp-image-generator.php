@@ -47,7 +47,7 @@ function ikuty_theme_generate_ogp_image( $post_id ) {
 	$img_height = imagesy( $image );
 
 	// Text settings
-	$font_size = 60;
+	$font_size = 80;
 	$text_color = imagecolorallocate( $image, 0, 0, 0 ); // Black
 	$margin_horizontal = 192; // 192px margin on each side
 	$max_width = $img_width - ( $margin_horizontal * 2 );
@@ -96,7 +96,7 @@ function ikuty_theme_generate_ogp_image( $post_id ) {
 
 	// Draw @ikuty.com at bottom left
 	$site_name = '@ikuty.com';
-	$site_font_size = 38;
+	$site_font_size = 50;
 	$margin_bottom = 100;
 	$site_x = $margin_horizontal;
 	$site_y = $img_height - $margin_bottom;
