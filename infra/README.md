@@ -519,13 +519,27 @@ docker-compose restart wordpress nginx
 
 ### テーマの更新
 
-```bash
-# 最新のdevブランチを取得
-./scripts/setup-theme.sh
+上記は手動更新の手順です。本番環境では以下の自動デプロイに置き換わっています。
 
-# またはGitで直接更新
-cd themes/ikuty-theme/
-git pull origin dev
+### 自動デプロイ(GitHub Actions)
+
+`themes/ikuty-theme/` 配下を変更して `dev` ブランチへpushすると、GitHub Actionsが自動的に本番へ反映します。
+
+1. `lint`ジョブ: テーマ内の`*.php`に対して`php -l`で構文チェック
+2. `deploy`ジョブ: 制限付きSSH鍵(`command=`でサーバー上の`infra/scripts/deploy-theme.sh`のみ実行可能)経由でサーバーへ接続し、以下を実行
+   - `dev`ブランチの最新を取得
+   - `wp-content/themes/ikuty-theme-<commit-sha>`としてバージョン付きディレクトリに配置
+   - `wp theme activate`で切替(直近3世代を保持、それより古い世代は自動削除)
+   - `https://ikuty.com/`へのヘルスチェック
+
+`infra/`配下(nginx/docker-compose/mysql設定等)の変更はこのワークフローの対象外で、引き続き手動でのデプロイが必要です。
+
+**ロールバック**: 問題が発生した場合、直前のバージョンへ手動で切り戻せます。
+
+```bash
+docker compose exec wordpress wp theme list --path=/var/www/html --allow-root
+# 上記で保持されている過去のバージョン(ikuty-theme-<sha>)を確認してから:
+docker compose exec wordpress wp theme activate ikuty-theme-<過去のsha> --path=/var/www/html --allow-root
 ```
 
 ### 開発環境での使用

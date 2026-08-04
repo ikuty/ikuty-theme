@@ -1,0 +1,42 @@
+name: Deploy theme to production
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'themes/ikuty-theme/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: themes/ikuty-theme
+
+      - name: PHP syntax check
+        run: |
+          find themes/ikuty-theme -name '*.php' -not -path '*/vendor/*' -print0 \
+            | xargs -0 -n1 php -l
+
+  deploy:
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # ikuty.com のSSHホスト鍵を固定値として登録(TOFUによるなりすまし接続を防ぐ)
+          cat >> ~/.ssh/known_hosts <<'EOF'
+          ikuty.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEs/JiR2aIxSkQuOeePdnJJjLatPVyaRwaqEwlM8I7G6
+          EOF
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy via SSH forced command
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes ubuntu@ikuty.com
