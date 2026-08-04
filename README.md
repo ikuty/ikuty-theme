@@ -13,6 +13,10 @@ Underscores (_s) スターターテーマをベースにした ikuty.com風カ�
 - **phpMyAdmin**: データベース管理インターフェース
 - **カスタムテーマ**: Automattic の Underscores (_s) スターターテーマをベース
 
+## 本番インフラ (`infra/`)
+
+本番サーバー(ikuty.com)向けのDocker Compose構成・nginx/PHP-FPM/MySQL設定・運用スクリプトは `infra/` 配下に統合されています。旧 `ikuty-wp-infra` リポジトリはこのモノレポへの統合に伴いArchive化されました。詳細は [`infra/README.md`](./infra/README.md) を参照してください。
+
 ## アーキテクチャ
 
 ### Docker サービス
