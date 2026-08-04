@@ -1,3 +1,4 @@
 .DS_Store
 .env
 /mysql/
+.claude/settings.local.json
