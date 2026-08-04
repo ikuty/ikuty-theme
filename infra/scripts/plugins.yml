@@ -1,0 +1,27 @@
+plugins:
+  classic-editor:
+    name: classic-editor
+    auto-update: false
+    active: true
+    version: latest
+  updraftplus:
+    name: updraftplus
+    auto-update: true
+    active: true
+    version: latest
+  wps-hide-login:
+    name: wps-hide-login
+    auto-update: false
+    active: true
+    version: latest
+  mathjax-latex:
+    name: mathjax-latex
+    auto-update: true
+    active: true
+    version: latest
+  slim-seo:
+    name: slim-seo
+    auto-update: true
+    active: true
+    version: latest
+  
