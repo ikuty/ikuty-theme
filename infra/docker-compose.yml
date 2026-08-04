@@ -63,6 +63,12 @@ services:
     image: certbot/certbot
     container_name: wordpress-certbot
     restart: "no"
+    # tools プロファイルに分離し、`docker compose up -d` の対象から除外する。
+    # 証明書の発行/更新は ssl-init.sh / ssl-renew.sh が `docker compose run --rm certbot ...`
+    # で明示的に呼び出す運用のため、up -d のたびに certonly が走ってLet's Encryptの
+    # レート制限(週5回)を消費する事故を防ぐ。
+    profiles:
+      - tools
     volumes:
       - ssl_certs:/etc/letsencrypt
       - certbot_webroot:/var/www/certbot
