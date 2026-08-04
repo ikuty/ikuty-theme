@@ -1,5 +1,7 @@
 # WordPress Docker Infrastructure with ikuty-theme
 
+> このディレクトリは `ikuty-theme` リポジトリのモノレポ化により、旧 `ikuty-wp-infra` リポジトリの内容を `infra/` 配下に統合したものです。本番サーバー上でのパスは `~/ikuty-theme/infra/` になります。
+
 Docker Compose を使用した WordPress インフラストラクチャです。nginx リバースプロキシ、PHP-FPM、MySQL 8.4、ikuty-themeの自動統合、Let's Encrypt SSL証明書を組み合わせたセキュアで高パフォーマンスな構成です。
 
 🚀 **一行でセットアップ**: `./scripts/init-with-theme.sh`
@@ -109,7 +111,7 @@ docker-compose up -d
 ## ファイル構成
 
 ```
-wordpress-infra/
+ikuty-theme/infra/
 ├── docker-compose.yml          # Docker Compose設定
 ├── .env                       # 環境変数
 ├── nginx/                     # nginx設定
@@ -349,7 +351,7 @@ ufw enable
 
 ### 管理者IP制限
 
-`nginx/sites-available/wordpress.conf`で管理者アクセスを制限：
+`nginx/sites-available/http.conf`で管理者アクセスを制限：
 
 ```nginx
 location ~ ^/(wp-admin|wp-login\.php) {
@@ -368,10 +370,10 @@ crontabでSSL証明書の自動更新を設定：
 
 ```bash
 # 毎日午前2時に証明書更新をチェック
-0 2 * * * /path/to/wordpress-infra/scripts/ssl-renew.sh
+0 2 * * * /path/to/ikuty-theme/infra/scripts/ssl-renew.sh
 
 # 毎週日曜日午前3時にバックアップ
-0 3 * * 0 /path/to/wordpress-infra/scripts/backup.sh
+0 3 * * 0 /path/to/ikuty-theme/infra/scripts/backup.sh
 ```
 
 ### ログ監視
@@ -426,7 +428,7 @@ curl -o /dev/null -s -w "%{time_total}\n" http://localhost
 
 #### 設定ファイル
 - `php/zzz-socket.conf`: PHP-FPMソケット設定
-- `nginx/sites-available/wordpress.conf`: nginx設定
+- `nginx/sites-available/http.conf`: nginx設定
 - `docker-compose.yml`: ボリューム共有設定
 
 ### 環境別SSL証明書システム
@@ -467,7 +469,7 @@ curl -o /dev/null -s -w "%{time_total}\n" http://localhost
    - **レートリミットに達した場合**: Let's Encryptの証明書発行回数には上限があります（同一ドメインで週5回など）。`--force-renewal` のような危険なオプションの使用や、`ssl-init.sh` の頻繁な実行は避けてください。レートリミットに達してしまった場合は、以下の手順で復旧します。
      1. レートリミットが解除されるのを待ちます（通常は1週間後）。
      2. `docker-compose down` でコンテナを停止します。
-     3. `docker volume rm wordpress-infra_ssl_certs` を実行し、古い証明書ボリュームを完全に削除します。
+     3. `docker volume rm wordpress-infra_ssl_certs` を実行し、古い証明書ボリュームを完全に削除します(`COMPOSE_PROJECT_NAME=wordpress-infra`を`.env`で固定しているため、ディレクトリ名が`infra/`になった後もボリューム名は`wordpress-infra_`接頭辞のまま)。
      4. `docker-compose up -d nginx wordpress` でサービスを起動します。
      5. `./scripts/ssl-init.sh` を実行して、新しい証明書を発行します。
      6. `docker-compose up -d` ですべてのサービスを起動します。
@@ -539,7 +541,7 @@ git pull origin dev
 ### カスタマイズポイント
 
 - `themes/ikuty-theme/themes/original-theme/`: テーマファイル
-- `nginx/sites-available/wordpress.conf`: nginx設定
+- `nginx/sites-available/http.conf`: nginx設定
 - `php/php-fpm.conf`: PHP-FPM設定
 - `php/zzz-socket.conf`: PHP-FPM Unixソケット設定
 - `php/uploads.ini`: ファイルアップロード設定

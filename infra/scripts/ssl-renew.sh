@@ -208,7 +208,7 @@ main() {
         echo "🔒 次回の自動実行: cron設定に従って実行されます"
         echo ""
         echo "📋 cron設定例（毎日午前2時に実行）:"
-        echo "   0 2 * * * cd /path/to/wordpress-infra && ./scripts/ssl-renew.sh"
+        echo "   0 2 * * * cd /path/to/ikuty-theme/infra && ./scripts/ssl-renew.sh"
     fi
     
     echo ""
