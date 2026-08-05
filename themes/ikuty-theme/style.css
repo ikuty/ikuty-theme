@@ -2925,6 +2925,7 @@ select:focus {
 	/* Make content full width on mobile */
 	.content-wrapper {
 		grid-template-columns: 1fr;
+		padding: 0;
 	}
 	
 	/* Grid layout for mobile */
