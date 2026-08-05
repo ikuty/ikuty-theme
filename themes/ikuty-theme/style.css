@@ -2838,6 +2838,8 @@ select:focus {
 		display: block;
 		padding: 1rem;
 		border-radius: 0;
+		font-weight: 700;
+		color: #000;
 	}
 	
 	.footer-container {
