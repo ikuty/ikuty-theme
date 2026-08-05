@@ -289,6 +289,11 @@ require get_template_directory() . '/inc/customizer.php';
 require get_template_directory() . '/inc/disable-comments.php';
 
 /**
+ * Denser admin posts list layout.
+ */
+require get_template_directory() . '/inc/admin-posts-list.php';
+
+/**
  * Load Jetpack compatibility file.
  */
 if ( defined( 'JETPACK__VERSION' ) ) {
