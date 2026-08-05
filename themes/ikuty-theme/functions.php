@@ -284,6 +284,11 @@ require get_template_directory() . '/inc/ogp-image-generator.php';
 require get_template_directory() . '/inc/customizer.php';
 
 /**
+ * Disable comments site-wide.
+ */
+require get_template_directory() . '/inc/disable-comments.php';
+
+/**
  * Load Jetpack compatibility file.
  */
 if ( defined( 'JETPACK__VERSION' ) ) {
