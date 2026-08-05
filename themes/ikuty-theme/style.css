@@ -2935,6 +2935,14 @@ select:focus {
 		margin: 0;
 	}
 
+	.posts-container {
+		margin: 0;
+	}
+
+	.site-footer {
+		margin: 0;
+	}
+
 	.grid-item-content {
 		padding: 5px;
 	}
