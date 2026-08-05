@@ -2957,6 +2957,20 @@ select:focus {
 		padding: 5px;
 	}
 
+	.page-content,
+	.entry-content,
+	.entry-summary {
+		overflow-wrap: break-word;
+	}
+
+	#primary {
+		padding: 5px;
+	}
+
+	h1.entry-title {
+		margin: 0;
+	}
+
 	.tag-section {
 		margin: 0;
 	}
