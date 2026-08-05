@@ -2932,6 +2932,10 @@ select:focus {
 		grid-template-columns: repeat(2, 1fr);
 		gap: 0.5rem;
 	}
+
+	.grid-item-content {
+		padding: 5px;
+	}
 	
 	/* Hide third item on mobile */
 	.posts-grid .grid-item:nth-child(3),
