@@ -2940,6 +2940,15 @@ select:focus {
 	.tag-section-header {
 		padding: 0;
 		margin: 0;
+		font-size: 1rem;
+	}
+
+	.tag-section-header .link {
+		font-size: 1.0rem;
+	}
+
+	.tag-more-link {
+		font-size: 1.0rem;
 	}
 	
 	/* Hide third item on mobile */
