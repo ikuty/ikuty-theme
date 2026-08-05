@@ -104,11 +104,23 @@ renew_letsencrypt_certificates() {
         exit 1
     fi
 
-    # certbot renewを実行。--post-hookにより、証明書が更新された場合のみnginxがリロードされる
+    # certbot renewを実行。
+    # 注: --post-hookはcertbotコンテナ内で実行されるため、そこにdockerコマンドは
+    # 存在せずhookが必ず失敗する(renew自体も中断される)。そのためnginxのリロードは
+    # renew成功後にホスト側で別途実行する。
     log_info "証明書の更新を実行中...（更新が必要な場合のみ）"
-    if docker compose run --rm certbot renew --post-hook "docker compose exec -T nginx nginx -s reload"; then
+    if docker compose run --rm certbot renew; then
         log_success "証明書の更新処理が正常に完了しました。"
-        log_to_file "Certificate renewal process completed. Nginx was reloaded if renewal occurred."
+        log_to_file "Certificate renewal process completed."
+
+        log_info "nginxをリロード中..."
+        if docker compose exec -T nginx nginx -s reload; then
+            log_success "nginxのリロードが完了しました。"
+            log_to_file "Nginx reloaded."
+        else
+            log_error "nginxのリロードに失敗しました。"
+            log_to_file "ERROR: Failed to reload nginx."
+        fi
     else
         log_error "証明書の更新処理中にエラーが発生しました。"
         log_to_file "ERROR: An error occurred during the certificate renewal process."
@@ -121,18 +133,23 @@ renew_letsencrypt_certificates() {
 # 証明書の状態確認
 check_certificate_status() {
     log_info "証明書の状態を確認中..."
-    
-    # ssl_certsディレクトリの証明書を確認
-    if [ -f "ssl_certs/live/$DOMAIN_NAME/fullchain.pem" ]; then
+
+    # 証明書は ssl_certs という名前付きDockerボリューム内にあり、ホストの
+    # ローカルパスには存在しないため、使い捨てコンテナ経由でPEM内容を取得し、
+    # ホスト側のopensslで解析する。
+    CERT_PEM=$(docker run --rm -v wordpress-infra_ssl_certs:/certs alpine:latest \
+        cat "/certs/live/$DOMAIN_NAME/fullchain.pem" 2>/dev/null)
+
+    if [ -n "$CERT_PEM" ]; then
         # 有効期限の確認
-        CERT_EXPIRY=$(openssl x509 -enddate -noout -in "ssl_certs/live/$DOMAIN_NAME/fullchain.pem" | cut -d= -f2)
+        CERT_EXPIRY=$(echo "$CERT_PEM" | openssl x509 -enddate -noout | cut -d= -f2)
         CERT_EXPIRY_EPOCH=$(date -d "$CERT_EXPIRY" +%s 2>/dev/null || echo "0")
         CURRENT_EPOCH=$(date +%s)
         DAYS_REMAINING=$(( (CERT_EXPIRY_EPOCH - CURRENT_EPOCH) / 86400 ))
-        
+
         log_info "証明書有効期限: $CERT_EXPIRY"
         log_to_file "Certificate valid until: $CERT_EXPIRY"
-        
+
         if [ $DAYS_REMAINING -gt 0 ]; then
             if [ $DAYS_REMAINING -le 30 ]; then
                 log_warning "証明書の有効期限まで $DAYS_REMAINING 日です（更新推奨）"
@@ -146,19 +163,19 @@ check_certificate_status() {
             log_to_file "ERROR: Certificate has expired!"
             return 1
         fi
-        
+
         # 証明書の発行者を確認
-        CERT_ISSUER=$(openssl x509 -issuer -noout -in "ssl_certs/live/$DOMAIN_NAME/fullchain.pem" | sed 's/issuer=//')
+        CERT_ISSUER=$(echo "$CERT_PEM" | openssl x509 -issuer -noout | sed 's/issuer=//')
         log_info "証明書発行者: $CERT_ISSUER"
-        
+
         # SANs（Subject Alternative Names）を確認
-        CERT_SANS=$(openssl x509 -text -noout -in "ssl_certs/live/$DOMAIN_NAME/fullchain.pem" | grep -A1 "Subject Alternative Name" | tail -1 | sed 's/^[[:space:]]*//')
+        CERT_SANS=$(echo "$CERT_PEM" | openssl x509 -text -noout | grep -A1 "Subject Alternative Name" | tail -1 | sed 's/^[[:space:]]*//')
         if [ -n "$CERT_SANS" ]; then
             log_info "対象ドメイン: $CERT_SANS"
         fi
-        
+
     else
-        log_error "証明書ファイルが見つかりません: ssl_certs/live/$DOMAIN_NAME/fullchain.pem"
+        log_error "証明書ファイルが見つかりません(ボリューム: wordpress-infra_ssl_certs, パス: live/$DOMAIN_NAME/fullchain.pem)"
         log_to_file "ERROR: Certificate file not found"
         return 1
     fi
