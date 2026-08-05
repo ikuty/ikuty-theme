@@ -2936,6 +2936,11 @@ select:focus {
 	.grid-item-content {
 		padding: 5px;
 	}
+
+	.tag-section-header {
+		padding: 0;
+		margin: 0;
+	}
 	
 	/* Hide third item on mobile */
 	.posts-grid .grid-item:nth-child(3),
