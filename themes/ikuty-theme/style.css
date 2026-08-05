@@ -2938,6 +2938,10 @@ select:focus {
 		padding: 5px;
 	}
 
+	.tag-section {
+		margin: 0;
+	}
+
 	.tag-section-header {
 		padding: 5px 0;
 		margin: 0;
