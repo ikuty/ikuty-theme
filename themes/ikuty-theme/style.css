@@ -3002,7 +3002,16 @@ select:focus {
 	select,
 	optgroup,
 	textarea {
-		font-size: 20px;
+		font-size: 16.5px;
+		line-height: 1.5;
+	}
+
+	/* CDN経由のPrism.jsテーマCSS(pre[class*="language-"])が
+	   pre のfont-size/line-heightを上書きしてしまうため、
+	   !important で優先させる */
+	pre {
+		font-size: 0.7rem !important;
+		line-height: 1.4 !important;
 	}
 	
 	/* Hide floating banner on mobile */
