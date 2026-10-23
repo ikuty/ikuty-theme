@@ -89,7 +89,8 @@ function ikuty_theme_generate_ogp_image( $post_id ) {
 	// Draw each line with left margin
 	foreach ( $lines as $index => $line ) {
 		$x = $margin_horizontal;
-		$y = $start_y + ( $index * $line_height );
+		// imagettftext() は int を要求する。float を渡すとPHP 8.1以降で非推奨になるため、従来どおり切り捨てて明示的にキャストする
+		$y = (int) ( $start_y + ( $index * $line_height ) );
 
 		imagettftext( $image, $font_size, 0, $x, $y, $text_color, $font_path, $line );
 	}
@@ -108,7 +109,7 @@ function ikuty_theme_generate_ogp_image( $post_id ) {
 
 	// Save image
 	$saved = imagepng( $image, $temp_file, 9 );
-	imagedestroy( $image );
+	// PHP 8.0以降はGdImageが自動で解放され、imagedestroy() は何もしない(8.5で非推奨)ため呼ばない
 
 	if ( ! $saved ) {
 		error_log( 'OGP Image Generator: Failed to save generated image' );

@@ -817,10 +817,10 @@ function clink_shortcode( $atts ) {
 		$post_id = url_to_postid($url);
 		$post = get_post($post_id);
 		$thumbnail_id = get_post_thumbnail_id($post_id);
-		if ($humbnail_id === 0) {
+		if ( empty( $thumbnail_id ) ) {
 			$thumbnail_url = get_template_directory_uri() . '/img/default.png';
 		} else {
-			$thumbnail_url = wp_get_attachment_image_url($thumbnail_id, 'square-360', array('loading'=>'lazy'));
+			$thumbnail_url = wp_get_attachment_image_url( $thumbnail_id, 'square-360' );
 		}
 		$title = esc_html(get_the_title($post_id));
 		if (empty($post->post_excerpt)) {
