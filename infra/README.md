@@ -329,13 +329,111 @@ openssl x509 -in ssl_certs/live/test.ikuty.com/fullchain.pem -text -noout
 
 ### バックアップ・復旧
 
+定期バックアップはUpdraftPlusが行います(S3へ月1回)。`backup.sh`は定期実行せず、PHPやOSの更新など大きな作業の前に手動でバックアップを取るために使います。
+
 ```bash
-# バックアップ作成
+# バックアップ作成(保存先は環境変数BACKUP_DIRで変更可能。未指定時は~/backups)
 ./scripts/backup.sh
 
 # バックアップから復旧
-./scripts/restore.sh /backups/wordpress_backup_YYYYMMDD_HHMMSS
+./scripts/restore.sh ~/backups/wordpress_backup_YYYYMMDD_HHMMSS
 ```
+
+作業前にDBだけ手早く取る場合は次のとおりです。ダンプの末尾に`-- Dump completed`があることを確認してください。
+
+```bash
+docker compose exec -T mysql sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --single-transaction "$MYSQL_DATABASE"' > ~/db-$(date +%F-%H%M).sql
+tail -n 1 ~/db-*.sql
+```
+
+### 更新作業(本番サーバー)
+
+以下はすべて本番サーバー(`ssh ikuty.com`)の`infra/`ディレクトリで実行します。`infra/`配下の変更はGitHub Actionsの対象外のため、手動で反映します。
+
+#### PHP・Dockerイメージの更新
+
+WordPress本体のファイルは`wp_data`ボリュームにあり、PHPはDockerイメージ(`wordpress:php8.3-fpm`)に含まれます。ベースイメージのタグはマイナーバージョンを固定していないため、`--pull`を付けて再ビルドしない限り、古いPHPのまま動き続けます。月1回程度、およびPHPの重大な脆弱性が公表されたときに実施してください。
+
+```bash
+# 1. 現在のPHPを確認
+docker compose exec -T wordpress php -v | head -1
+
+# 2. DBをバックアップ(上記参照)し、ロールバック用にイメージへタグを付ける
+docker tag wordpress-infra-wordpress:latest wordpress-infra-wordpress:before-php-update
+
+# 3. 最新のベースイメージで再ビルドして入れ替え(数秒停止します)
+docker compose build --pull wordpress
+docker compose up -d wordpress
+
+# 4. 確認
+docker compose exec -T wordpress php -v | head -1
+curl -s -o /dev/null -w "%{http_code}\n" https://ikuty.com/
+docker compose logs --since 10m wordpress 2>&1 | grep -iE "fatal|warning|error"
+```
+
+注意点:
+
+- 脆弱性対応では、`php -v`の結果がphp.netの告知にある修正版以上であることを必ず確認してください。公式イメージの更新は、修正版の公開より遅れることがあります。更新直後に8.3.35だった場合は、イメージが更新されるまで待って再実行します。
+- `502 Bad Gateway`になった場合は`docker compose restart nginx`で復帰します。
+- 問題がなければ、`docker rmi wordpress-infra-wordpress:before-php-update`とダングリングイメージの削除(`docker image prune -f`)で後片付けします。脆弱なPHPを含むイメージを残さないようにしてください。
+
+#### WordPress本体の更新
+
+マイナー更新(セキュリティ・保守リリース)はWordPressの自動更新で適用されます。メジャー更新は手動です。
+
+```bash
+docker compose exec -T wordpress wp core version --path=/var/www/html --allow-root
+docker compose exec -T wordpress wp core check-update --path=/var/www/html --allow-root
+
+# メジャー更新の場合は、DBをバックアップしたうえで実行
+docker compose exec -T wordpress wp core update --path=/var/www/html --allow-root
+docker compose exec -T wordpress wp core update-db --path=/var/www/html --allow-root
+```
+
+PHPの脆弱性はWordPress本体やプラグインの更新では防げません。PHPの更新が必要です。
+
+#### OSの更新と再起動
+
+ログイン時に`System restart required`と表示されている場合は再起動が必要です。2:00はSSL証明書の更新が走るため避けてください。
+
+```bash
+# 再起動の理由(カーネルなど)を確認
+cat /var/run/reboot-required.pkgs
+
+# 更新を適用(設定ファイルの確認で止まらないよう既存設定を保持し、サービスの自動再起動は抑える)
+sudo apt-get update
+sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l apt-get upgrade -y -o Dpkg::Options::=--force-confold
+
+# 再起動(数分間サイトが停止します。SSHが切れるのは正常です)
+sudo reboot
+```
+
+Dockerやcontainerdの更新が含まれる場合、`apt-get upgrade`の途中でコンテナが一度再起動します。再起動後、1〜2分待って次を確認します。
+
+```bash
+uname -r
+ls /var/run/reboot-required    # No such file or directory が正常
+docker compose ps --format "{{.Service}} {{.Status}}"
+docker compose exec -T wordpress php -v | head -1
+curl -s -o /dev/null -w "%{http_code}\n" https://ikuty.com/
+```
+
+全コンテナは`restart: unless-stopped`のため、再起動後に自動で復帰します。
+
+#### 重大な脆弱性の公表後に侵害の痕跡を確認する
+
+修正前の期間にサイトが公開されていた場合は、更新後に次を確認します。いずれも読み取りのみです。
+
+```bash
+W="docker compose exec -T wordpress"
+$W wp core verify-checksums --path=/var/www/html --allow-root      # wp-config-docker.phpの警告は公式イメージの標準ファイルで正常
+$W wp plugin verify-checksums --all --path=/var/www/html --allow-root
+$W wp user list --role=administrator --fields=ID,user_login,user_registered --path=/var/www/html --allow-root
+$W find /var/www/html/wp-content/uploads -name "*.php"            # 保護用のindex.phpなど以外が無いこと
+$W find /var/www/html -name "*.php" -mtime -4 -not -path "*/wp-content/themes/ikuty-theme-*"
+```
+
+最後のコマンドは、プラグインの自動更新(`plugins.yml`でauto-update: true)により、該当プラグイン配下のファイルが多数表示されます。プラグインのチェックサム検証が成功していれば、公式ファイルと一致しています。`wp-includes`・`wp-admin`・`uploads`など、更新対象外の場所に変更があれば要調査です。ディスク上の確認だけでは侵害の有無を断定できない点に注意してください。
 
 ## セキュリティ設定
 
@@ -371,10 +469,9 @@ crontabでSSL証明書の自動更新を設定：
 ```bash
 # 毎日午前2時に証明書更新をチェック
 0 2 * * * /path/to/ikuty-theme/infra/scripts/ssl-renew.sh
-
-# 毎週日曜日午前3時にバックアップ
-0 3 * * 0 /path/to/ikuty-theme/infra/scripts/backup.sh
 ```
+
+定期バックアップはUpdraftPlus(S3へ月1回)が行うため、`backup.sh`のcron登録は不要です。
 
 ### ログ監視
 
