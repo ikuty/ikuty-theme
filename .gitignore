@@ -3,3 +3,4 @@
 /mysql/
 .claude/settings.local.json
 /ci/vendor/
+/.debug-logs/
