@@ -1,0 +1,85 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Parameter \#1 \$search of function str_replace expects array\<string\>\|string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: ../themes/ikuty-theme/archive.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_html expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: ../themes/ikuty-theme/archive.php
+
+		-
+			message: '#^Variable \$wp_query might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: ../themes/ikuty-theme/archive.php
+
+		-
+			message: '#^Parameter \#1 \$args of function wp_nav_menu expects array\{menu\?\: int\|string\|WP_Term, menu_class\?\: string, menu_id\?\: string, container\?\: string, container_class\?\: string, container_id\?\: string, container_aria_label\?\: string, fallback_cb\?\: \(callable\(\)\: mixed\)\|false, \.\.\.\}, array\{theme_location\: ''footer\-menu'', menu_id\: ''footer\-menu'', container\: false, menu_class\: ''footer\-menu\-list'', depth\: 1\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: ../themes/ikuty-theme/footer.php
+
+		-
+			message: '#^Parameter \#1 \$args of function wp_nav_menu expects array\{menu\?\: int\|string\|WP_Term, menu_class\?\: string, menu_id\?\: string, container\?\: string, container_class\?\: string, container_id\?\: string, container_aria_label\?\: string, fallback_cb\?\: \(callable\(\)\: mixed\)\|false, \.\.\.\}, array\{theme_location\: ''menu\-1'', menu_id\: ''primary\-menu'', container\: false, menu_class\: ''primary\-menu\-list''\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: ../themes/ikuty-theme/header.php
+
+		-
+			message: '#^Callback expects 2 parameters, \$accepted_args is set to 3\.$#'
+			identifier: arguments.count
+			count: 1
+			path: ../themes/ikuty-theme/inc/category-order.php
+
+		-
+			message: '#^Property WP_Customize_Manager\:\:\$selective_refresh \(WP_Customize_Selective_Refresh\) in isset\(\) is not nullable\.$#'
+			identifier: isset.property
+			count: 1
+			path: ../themes/ikuty-theme/inc/customizer.php
+
+		-
+			message: '#^Callback expects 0 parameters, \$accepted_args is set to 2\.$#'
+			identifier: arguments.count
+			count: 2
+			path: ../themes/ikuty-theme/inc/disable-comments.php
+
+		-
+			message: '#^Callback expects 1 parameter, \$accepted_args is set to 2\.$#'
+			identifier: arguments.count
+			count: 1
+			path: ../themes/ikuty-theme/inc/disable-comments.php
+
+		-
+			message: '#^Cannot access property \$order on int\|string\|WP_Term\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: ../themes/ikuty-theme/inc/tag-order.php
+
+		-
+			message: '#^Parameter \#1 \$author_id of function get_author_posts_url expects int, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: ../themes/ikuty-theme/inc/template-tags.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 1
+			path: ../themes/ikuty-theme/inc/widgets.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_attr expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: ../themes/ikuty-theme/inc/widgets.php
+
+		-
+			message: '#^Path in require_once\(\) "/var/www/html/wp\-load\.php" is not a file or it does not exist\.$#'
+			identifier: requireOnce.fileNotFound
+			count: 1
+			path: ../themes/ikuty-theme/regenerate-ogp-images.php

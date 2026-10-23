@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<ruleset name="ikuty-theme PHP compatibility">
+	<description>Detect code that breaks or is deprecated on PHP 8.1 and later.</description>
+
+	<arg name="extensions" value="php"/>
+	<arg value="s"/>
+
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+
+	<!-- 8.1 以上すべてを対象にする(本番は8.3。将来の8.4/8.5の非推奨も拾う) -->
+	<config name="testVersion" value="8.1-"/>
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>

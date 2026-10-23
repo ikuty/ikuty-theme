@@ -2,3 +2,4 @@
 .env
 /mysql/
 .claude/settings.local.json
+/ci/vendor/
