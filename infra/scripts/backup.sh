@@ -6,7 +6,9 @@
 set -e
 
 # 設定
-BACKUP_DIR="/tmp/backups"
+# /tmp は再起動で消えるため、既定の保存先はホームディレクトリ配下にする
+# 環境変数 BACKUP_DIR で上書き可能(絶対パスで指定すること)
+BACKUP_DIR="${BACKUP_DIR:-$HOME/backups}"
 DATE=$(date '+%Y%m%d_%H%M%S')
 BACKUP_NAME="wordpress_backup_$DATE"
 BACKUP_PATH="$BACKUP_DIR/$BACKUP_NAME"
@@ -25,7 +27,7 @@ echo "Starting backup process: $BACKUP_NAME"
 echo "Backing up WordPress files..."
 docker run --rm \
     -v wordpress-infra_wp_data:/var/www/html \
-    -v $(pwd)/$BACKUP_PATH:/backup \
+    -v "$BACKUP_PATH":/backup \
     alpine:latest \
     tar -czf /backup/wordpress_files.tar.gz -C /var/www/html .
 
@@ -48,7 +50,7 @@ tar -czf $BACKUP_PATH/config_files.tar.gz \
 echo "Backing up SSL certificates..."
 docker run --rm \
     -v wordpress-infra_ssl_certs:/etc/letsencrypt \
-    -v $(pwd)/$BACKUP_PATH:/backup \
+    -v "$BACKUP_PATH":/backup \
     alpine:latest \
     tar -czf /backup/ssl_certificates.tar.gz -C /etc/letsencrypt .
 
