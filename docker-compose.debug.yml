@@ -1,0 +1,23 @@
+# ローカルでデバッグログを有効にするための上書き設定。
+# 本番では WP_DEBUG が無効のため、E_DEPRECATED や E_NOTICE がログに出ない。
+# それらを洗い出すために、ローカルで有効にしてサイトを巡回する。
+#
+# 使い方:
+#   docker compose -f docker-compose.yml -f docker-compose.debug.yml up -d --pull never --no-deps -V wordpress
+#   (-V: 公式イメージの /var/www/html は匿名ボリュームのため、付けないと wp-config.php が作り直されず設定が反映されない)
+#   ログ: ./.debug-logs/debug.log
+#   PHPのバージョンを変える: WORDPRESS_IMAGE=wordpress:php8.5-apache を付けて起動(-V で wp-config を作り直す)
+#   Apple Siliconでamd64イメージを取得できない場合は WORDPRESS_PLATFORM=linux/arm64 も付ける
+#   元に戻す: docker compose up -d --pull never --no-deps -V wordpress
+services:
+  wordpress:
+    image: ${WORDPRESS_IMAGE:-wordpress:latest}
+    platform: ${WORDPRESS_PLATFORM:-linux/x86_64}
+    environment:
+      WORDPRESS_DEBUG: "1"
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_DEBUG_LOG', '/var/www/html/wp-content/debug/debug.log' );
+        define( 'WP_DEBUG_DISPLAY', false );
+        @ini_set( 'display_errors', '0' );
+    volumes:
+      - ./.debug-logs:/var/www/html/wp-content/debug
