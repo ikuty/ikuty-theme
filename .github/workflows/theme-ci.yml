@@ -60,5 +60,7 @@ jobs:
       - name: PHPCompatibility (PHP 8.1+)
         run: ci/vendor/bin/phpcs --standard=ci/phpcs.xml --basepath=. themes/ikuty-theme
 
+      # phpcs が失敗しても実行し、両方の結果を同時に確認できるようにする
       - name: PHPStan
+        if: ${{ !cancelled() }}
         run: ci/vendor/bin/phpstan analyse -c ci/phpstan.neon --no-progress --memory-limit=1G
