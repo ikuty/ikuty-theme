@@ -1,0 +1,66 @@
+name: Theme CI
+
+# PHP 8.x 互換性のチェック。デプロイ(deploy-theme.yml)とは独立しており、デプロイを止めない。
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'themes/ikuty-theme/**'
+      - 'ci/**'
+      - '.github/workflows/theme-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: php -l (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 8.1: 対象の下限 / 8.3: 本番 / 8.5: 最新(将来の更新に先回りする)
+        php: ['8.1', '8.3', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: themes/ikuty-theme
+
+      - name: Syntax check
+        run: |
+          # php -l は、コンパイル時の非推奨警告が出ても終了コード0を返す。
+          # そのため「No syntax errors detected」以外の出力があれば失敗とする。
+          docker run --rm \
+            -v "$PWD/themes/ikuty-theme:/src:ro" \
+            "php:${{ matrix.php }}-cli" \
+            sh -c '
+              find /src -name "*.php" -not -path "*/vendor/*" -not -path "*/node_modules/*" | sort | while read -r f; do
+                php -d error_reporting=-1 -d display_errors=1 -l "$f" 2>&1
+              done | grep -v "^No syntax errors detected" > /tmp/lint.out || true
+              if [ -s /tmp/lint.out ]; then cat /tmp/lint.out; exit 1; fi
+              echo "OK: no syntax errors or compile-time deprecations"
+            '
+
+  static:
+    name: PHPCompatibility and PHPStan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-ci-${{ hashFiles('ci/composer.lock') }}
+
+      - name: Install tools
+        run: composer install --working-dir=ci --no-interaction --prefer-dist --no-progress
+
+      - name: PHPCompatibility (PHP 8.1+)
+        run: ci/vendor/bin/phpcs --standard=ci/phpcs.xml --basepath=. themes/ikuty-theme
+
+      # phpcs が失敗しても実行し、両方の結果を同時に確認できるようにする
+      - name: PHPStan
+        if: ${{ !cancelled() }}
+        run: ci/vendor/bin/phpstan analyse -c ci/phpstan.neon --no-progress --memory-limit=1G

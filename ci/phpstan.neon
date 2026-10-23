@@ -1,0 +1,19 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    # 最新のPHPで解析する(非推奨や型の変更を早期に検出するため)
+    phpVersion: 80500
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - ../themes/ikuty-theme
+    # WP_CLI は extension に含まれないため、スタブを明示的に読み込む
+    scanFiles:
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-commands-stubs.php
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-i18n-stubs.php
+    excludePaths:
+        analyseAndScan:
+            - ../themes/ikuty-theme/vendor (?)
+            - ../themes/ikuty-theme/node_modules (?)
