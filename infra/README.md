@@ -435,6 +435,42 @@ $W find /var/www/html -name "*.php" -mtime -4 -not -path "*/wp-content/themes/ik
 
 最後のコマンドは、プラグインの自動更新(`plugins.yml`でauto-update: true)により、該当プラグイン配下のファイルが多数表示されます。プラグインのチェックサム検証が成功していれば、公式ファイルと一致しています。`wp-includes`・`wp-admin`・`uploads`など、更新対象外の場所に変更があれば要調査です。ディスク上の確認だけでは侵害の有無を断定できない点に注意してください。
 
+#### nginx設定の変更の反映
+
+`infra/nginx/`配下の変更は、GitHub Actionsの自動デプロイの対象外です。サーバーで最新を取得したうえで、**変更したファイルによって反映の方法が異なります。**
+
+| 変更したファイル | 反映の方法 |
+|---|---|
+| `sites-enabled/`・`sites-available/`・`snippets/`の中のファイル | `nginx -s reload`(無停止) |
+| `nginx.conf` | `docker compose up -d --force-recreate nginx`(1〜2秒、HTTP/HTTPSが停止) |
+
+```bash
+cd ~/ikuty-theme && git fetch -q origin dev && git reset --hard origin/dev && cd infra
+
+# sites-enabled 等を変更した場合
+docker compose exec -T nginx nginx -t              # 構文確認(警告が無く successful であること)
+docker compose exec -T nginx nginx -s reload
+
+# nginx.conf を変更した場合(reload ではなく、コンテナを作り直す)
+docker compose up -d --force-recreate nginx
+docker compose exec -T nginx nginx -t
+```
+
+**`nginx.conf`の変更に`nginx -s reload`や`docker compose restart nginx`は使えません。** `docker-compose.yml`が`nginx.conf`を**ファイル単位**でマウントしている(`./nginx/nginx.conf:/etc/nginx/nginx.conf:ro`)ためです。
+
+- Dockerはファイル単位のマウントを、コンテナ作成時のファイルの実体(inode)に紐づけます。
+- `git reset`や`git pull`は、ファイルを書き換えるのではなく、新しいファイルで置き換えます。コンテナ側は古い実体を指したままになり、ホストとコンテナで内容が食い違います。
+- `nginx -t`と`nginx -s reload`は、コンテナ内の(古い)内容を読むため、変更が反映されず、構文確認でも変更前の内容が検査されます。
+- ディレクトリ単位のマウントは、中のファイルを名前で引き直すため、置き換えても反映されます。`sites-enabled/`などが`reload`で反映されるのはこのためです。
+
+`nginx.conf`が反映されているかは、ホストとコンテナの内容を比較して確認できます。
+
+```bash
+diff nginx/nginx.conf <(docker compose exec -T nginx cat /etc/nginx/nginx.conf) && echo "同じ内容"
+```
+
+実例: 2026-10に`ssl_stapling`を`nginx.conf`から削除した際、`reload`では警告が消えず、コンテナの作り直しで解消しました。根本的には、`nginx.conf`の内容を`conf.d/`のようなディレクトリに移し、ディレクトリ単位でマウントすれば、`reload`だけで済みます(未実施)。
+
 ## セキュリティ設定
 
 ### ファイアウォール設定例
