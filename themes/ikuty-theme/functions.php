@@ -223,15 +223,62 @@ function ikuty_theme_scripts() {
 add_action( 'wp_enqueue_scripts', 'ikuty_theme_scripts' );
 
 /**
- * アイキャッチを設定しない場合、デフォルトのアイキャッチ画像を使用する。
+ * 既定のアイキャッチ画像(記事にアイキャッチが無い場合に使う)のHTMLを返す。
+ *
+ * WebP対応のブラウザには軽量なWebP(約42KB)を、非対応のブラウザにはPNG(約276KB)を配信する。
+ * og:image はSNSでの互換性のためPNGのURLを直接使うので、ここでは扱わない。
+ *
+ * @param array $attr alt(エスケープ前の文字列)、loading、class を指定できる。
+ * @return string
  */
-function set_default_thumbnail_image ( $html ) {
-  if ( "" === $html ) {
-    $html = '<img src="' . get_template_directory_uri() . '/img/default.png" alt="default eye-catch image." />';
-  }
-  return $html;
+function ikuty_theme_default_thumbnail_html( $attr = array() ) {
+	static $has_webp = null;
+	if ( null === $has_webp ) {
+		$has_webp = file_exists( get_template_directory() . '/img/default.webp' );
+	}
+
+	$uri = get_template_directory_uri();
+
+	// 画像の実寸を width/height に指定し、読み込み前後のレイアウトのずれを防ぐ
+	$img_attr = array(
+		'src'      => $uri . '/img/default.png',
+		'width'    => 660,
+		'height'   => 372,
+		'alt'      => isset( $attr['alt'] ) ? $attr['alt'] : '',
+		'decoding' => 'async',
+	);
+	if ( ! empty( $attr['loading'] ) ) {
+		$img_attr['loading'] = $attr['loading'];
+	}
+	if ( ! empty( $attr['class'] ) ) {
+		$img_attr['class'] = $attr['class'];
+	}
+
+	$img = '<img';
+	foreach ( $img_attr as $name => $value ) {
+		$img .= ' ' . $name . '="' . ( 'src' === $name ? esc_url( $value ) : esc_attr( $value ) ) . '"';
+	}
+	$img .= ' />';
+
+	if ( ! $has_webp ) {
+		return $img;
+	}
+
+	return '<picture><source srcset="' . esc_url( $uri . '/img/default.webp' ) . '" type="image/webp" />' . $img . '</picture>';
 }
-add_filter( 'post_thumbnail_html', 'set_default_thumbnail_image' );
+
+/**
+ * アイキャッチを設定しない場合、デフォルトのアイキャッチ画像を使用する。
+ *
+ * テンプレートが the_post_thumbnail() に渡した alt や loading を引き継ぐ。
+ */
+function set_default_thumbnail_image( $html, $post_id = 0, $post_thumbnail_id = 0, $size = '', $attr = '' ) {
+	if ( '' === $html ) {
+		$html = ikuty_theme_default_thumbnail_html( is_array( $attr ) ? $attr : array() );
+	}
+	return $html;
+}
+add_filter( 'post_thumbnail_html', 'set_default_thumbnail_image', 10, 5 );
 
 /**
  * Implement the Custom Header feature.
@@ -434,7 +481,7 @@ function all_topics_shortcode( $atts ) {
 		if ( has_post_thumbnail() ) {
 			$output .= get_the_post_thumbnail( null, 'square-360', array( 'loading' => 'lazy' ) );
 		} else {
-			$output .= '<img src="' . get_template_directory_uri() . '/img/default.png" alt="default eye-catch image." loading="lazy" />';
+			$output .= ikuty_theme_default_thumbnail_html( array( 'loading' => 'lazy' ) );
 		}
 		
 		$output .= '</a>';
@@ -712,7 +759,7 @@ function popular_topics_shortcode( $atts ) {
 		if ( has_post_thumbnail() ) {
 			$output .= get_the_post_thumbnail( null, 'square-360', array( 'loading' => 'lazy' ) );
 		} else {
-			$output .= '<img src="' . get_template_directory_uri() . '/img/default.png" alt="default eye-catch image." loading="lazy" />';
+			$output .= ikuty_theme_default_thumbnail_html( array( 'loading' => 'lazy' ) );
 		}
 		
 		$output .= '</a>';
@@ -807,6 +854,8 @@ function clink_shortcode( $atts ) {
 	), $atts );
 	
 	$output = "";
+	// 既定画像を使う場合だけ、alt(エスケープ前)を設定する。どちらの分岐でも参照するため、先に初期化しておく
+	$default_thumbnail_alt = null;
 	if ( empty( $atts['implicit'])) {
 		// Validate required parameters
 		if ( empty( $atts['url'] ) ) {
@@ -819,6 +868,9 @@ function clink_shortcode( $atts ) {
 		$thumbnail_id = get_post_thumbnail_id($post_id);
 		if ( empty( $thumbnail_id ) ) {
 			$thumbnail_url = get_template_directory_uri() . '/img/default.png';
+			// 既定画像は ikuty_theme_default_thumbnail_html() でWebP対応のHTMLにする。
+			// altはエスケープ前の値を渡す(関数内でエスケープするため、$title は使わない)
+			$default_thumbnail_alt = get_the_title( $post_id );
 		} else {
 			$thumbnail_url = wp_get_attachment_image_url( $thumbnail_id, 'square-360' );
 		}
@@ -866,7 +918,11 @@ function clink_shortcode( $atts ) {
 	$output = '<div class="clink-container">';
 	$output .= '<div class="clink-image">';
 	$output .= '<a class="clink-image-link" href="' . $url . '">';
-	$output .= '<img src="' . $thumbnail_url . '" alt="' . $title . '" loading="lazy" />';
+	if ( null !== $default_thumbnail_alt ) {
+		$output .= ikuty_theme_default_thumbnail_html( array( 'alt' => $default_thumbnail_alt, 'loading' => 'lazy' ) );
+	} else {
+		$output .= '<img src="' . $thumbnail_url . '" alt="' . $title . '" loading="lazy" />';
+	}
 	$output .= '</a>';
 	$output .= '</div>';
 	$output .= '<div class="clink-content">';
