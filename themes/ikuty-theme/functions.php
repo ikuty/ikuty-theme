@@ -336,6 +336,11 @@ require get_template_directory() . '/inc/customizer.php';
 require get_template_directory() . '/inc/disable-comments.php';
 
 /**
+ * Require login for REST API requests (closes the rest_route bypass of the nginx block).
+ */
+require get_template_directory() . '/inc/rest-api.php';
+
+/**
  * Denser admin posts list layout.
  */
 require get_template_directory() . '/inc/admin-posts-list.php';
