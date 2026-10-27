@@ -311,6 +311,11 @@ require get_template_directory() . '/inc/breadcrumbs.php';
 require get_template_directory() . '/inc/seo.php';
 
 /**
+ * Shared AJAX handler for saving the category/tag order.
+ */
+require get_template_directory() . '/inc/term-order-ajax.php';
+
+/**
  * Tag order functionality.
  */
 require get_template_directory() . '/inc/tag-order.php';

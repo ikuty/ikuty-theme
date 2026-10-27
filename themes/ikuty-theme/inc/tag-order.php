@@ -281,32 +281,7 @@ function enqueue_tag_order_scripts( $hook ) {
 // AJAX handler for updating tag order
 add_action( 'wp_ajax_update_tag_order', 'handle_tag_order_update' );
 function handle_tag_order_update() {
-    // Verify nonce
-    if ( ! wp_verify_nonce( $_POST['nonce'], 'tag_order_nonce' ) ) {
-        wp_die( 'Security check failed' );
-    }
-    
-    // Check user permissions
-    if ( ! current_user_can( 'manage_categories' ) ) {
-        wp_die( 'Insufficient permissions' );
-    }
-    
-    $tag_orders = $_POST['tag_orders'];
-    
-    if ( is_array( $tag_orders ) ) {
-        foreach ( $tag_orders as $term_id => $order ) {
-            $term_id = intval( $term_id );
-            $order = intval( $order );
-            
-            if ( $term_id > 0 ) {
-                update_term_meta( $term_id, 'tag_order', $order );
-            }
-        }
-        
-        wp_send_json_success( 'Tag order updated successfully' );
-    } else {
-        wp_send_json_error( 'Invalid data format' );
-    }
+    ikuty_theme_handle_term_order_ajax( 'post_tag', 'tag_order_nonce', 'tag_orders', 'tag_order', 'Tag order updated successfully' );
 }
 
 // Add CSS for admin styling
