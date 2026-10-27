@@ -154,9 +154,13 @@ jQuery(document).ready(function($) {
                     ).css('background', '#f8d7da').css('border-color', '#f5c6cb').css('color', '#721c24');
                 }
             },
-            error: function() {
+            error: function(xhr) {
+                // 403は、ページの有効期限切れ(nonce)や権限不足。再読み込みを促す
+                var message = (xhr && xhr.status === 403)
+                    ? '権限が無いか、ページの有効期限が切れています。ページを再読み込みしてください。'
+                    : '通信エラーが発生しました。';
                 $('.category-order-notice').html(
-                    '<strong>エラー:</strong> 通信エラーが発生しました。'
+                    '<strong>エラー:</strong> ' + message
                 ).css('background', '#f8d7da').css('border-color', '#f5c6cb').css('color', '#721c24');
             }
         });
