@@ -327,6 +327,25 @@ docker-compose exec nginx openssl x509 -in /etc/letsencrypt/live/your-domain.com
 openssl x509 -in ssl_certs/live/test.ikuty.com/fullchain.pem -text -noout
 ```
 
+#### 5. 追加ドメインの証明書発行（本番環境）
+
+`ssl-init.sh`は`.env`の`DOMAIN_NAME`1つ分しか扱いません。別のホスト名(例:MCPサーバ用の`test.ikuty.com`、`nginx/sites-enabled/test-mcp.conf`)を公開する場合は、certbotの別lineageとして手動で発行します。
+
+```bash
+cd ~/ikuty-theme/infra
+EMAIL=$(grep '^LETSENCRYPT_EMAIL=' .env | cut -d= -f2-)
+
+# まず --dry-run で確認してから、--dry-run を外して本番の発行を行う
+docker compose run --rm --no-deps certbot certonly --webroot --webroot-path=/var/www/certbot \
+  -d test.ikuty.com --email "$EMAIL" --agree-tos --no-eff-email --non-interactive --dry-run
+```
+
+- 事前にDNSのAレコードが対象のVPSを指している必要があります
+- ACMEのチャレンジは、port 80の既存serverブロック(`server_name _`)が`/.well-known/acme-challenge/`を受けるため、nginx設定の変更なしで通ります
+- 発行した証明書は、既存の`ssl-renew.sh`(`certbot renew`)が全lineageまとめて更新するため、追加の設定は不要です
+- `nginx.conf`の`include`はファイルを個別に指定しているため、新しい設定ファイルを`sites-enabled/`に置いただけでは読み込まれません。`include`行を追加してください
+- `nginx.conf`は単一ファイルとしてbind mountされています。変更をデプロイした後は、コンテナが古い内容を見続けることがあるため、`docker exec wordpress-nginx md5sum /etc/nginx/nginx.conf`とホスト上の`md5sum nginx/nginx.conf`を比較し、一致しなければ`docker compose up -d --force-recreate nginx`で再作成します(`restart`では解消しません)
+
 ### バックアップ・復旧
 
 定期バックアップはUpdraftPlusが行います(S3へ月1回)。`backup.sh`は定期実行せず、PHPやOSの更新など大きな作業の前に手動でバックアップを取るために使います。
