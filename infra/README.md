@@ -681,17 +681,30 @@ docker-compose restart wordpress nginx
 2. `deploy`ジョブ: 制限付きSSH鍵(`command=`でサーバー上の`infra/scripts/deploy-theme.sh`のみ実行可能)経由でサーバーへ接続し、以下を実行
    - `dev`ブランチの最新を取得
    - `wp-content/themes/ikuty-theme-<commit-sha>`としてバージョン付きディレクトリに配置
-   - `wp theme activate`で切替(直近3世代を保持、それより古い世代は自動削除)
+   - `wp theme activate`で切替
+   - `wp-content/ikuty-theme-current`を新しい世代へ付け替え(CSS/JS/画像のURLをデプロイで変えないため。下記参照)
+   - 直近3世代を保持し、それより古い世代は自動削除
    - `https://ikuty.com/`へのヘルスチェック
 
 `infra/`配下(nginx/docker-compose/mysql設定等)の変更はこのワークフローの対象外で、引き続き手動でのデプロイが必要です。
 
-**ロールバック**: 問題が発生した場合、直前のバージョンへ手動で切り戻せます。
+**静的ファイルのURL**: PHPが読むテーマは世代ごとのディレクトリ(`ikuty-theme-<sha>`)ですが、CSS/JS/画像のURLは、デプロイで変わらない`/wp-content/ikuty-theme-current/...?ver=<内容のハッシュ>`になります(`functions.php`の`ikuty_theme_asset_uri()`)。nginxは静的ファイルを1年・immutableでキャッシュしますが、内容が変わらない限りURLも変わらないため、デプロイ後も訪問者のブラウザのキャッシュが効きます。内容を変えたファイルだけ、`ver`が変わって取り直されます。
+
+- `ikuty-theme-current`は`wp-content/`直下のシンボリックリンクで、現在の世代を指します(`themes/`の外なので、テーマ一覧にも世代の自動削除にも含まれません)
+- 有効なテーマと`ikuty-theme-current`の指す先が違うとき(ロールバックでリンクを付け替え忘れたときなど)は、テーマが自動的に従来の世代付きURLに戻すので、CSSと画像がずれることはありません
+- 削除された旧世代のURL(`/wp-content/themes/ikuty-theme-<旧sha>/...`)は、nginxが現在の世代の同じパスに振り向けます(Googleが保存したHTMLが参照していても404になりません)
+
+**ロールバック**: 問題が発生した場合、直前のバージョンへ手動で切り戻せます。テーマの切替に加えて、静的ファイル用のリンクも付け替えてください。
 
 ```bash
 docker compose exec wordpress wp theme list --path=/var/www/html --allow-root
 # 上記で保持されている過去のバージョン(ikuty-theme-<sha>)を確認してから:
 docker compose exec wordpress wp theme activate ikuty-theme-<過去のsha> --path=/var/www/html --allow-root
+# 静的ファイル用のリンクも付け替える(volume名はwordpress-infra_wp_data)
+docker run --rm -v wordpress-infra_wp_data:/var/www/html alpine:latest sh -c "
+  cd /var/www/html/wp-content &&
+  ln -sfn themes/ikuty-theme-<過去のsha> .ikuty-theme-current.tmp &&
+  mv -fT .ikuty-theme-current.tmp ikuty-theme-current"
 ```
 
 ### 開発環境での使用

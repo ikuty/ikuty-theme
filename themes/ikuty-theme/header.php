@@ -33,7 +33,7 @@
 					?>
 					<h1 class="site-title">
 						<a href="<?php echo esc_url( home_url( '/' ) ); ?>" rel="home">
-							<img src="<?php echo get_template_directory_uri(); ?>/img/ikutycom.png" alt="<?php bloginfo( 'name' ); ?>" class="site-logo">
+							<img src="<?php echo esc_url( ikuty_theme_asset_url( 'img/ikutycom.png' ) ); ?>" alt="<?php bloginfo( 'name' ); ?>" class="site-logo">
 						</a>
 					</h1>
 					<?php
@@ -41,7 +41,7 @@
 					?>
 					<div class="site-title">
 						<a href="<?php echo esc_url( home_url( '/' ) ); ?>" rel="home">
-							<img src="<?php echo get_template_directory_uri(); ?>/img/ikutycom.png" alt="<?php bloginfo( 'name' ); ?>" class="site-logo">
+							<img src="<?php echo esc_url( ikuty_theme_asset_url( 'img/ikutycom.png' ) ); ?>" alt="<?php bloginfo( 'name' ); ?>" class="site-logo">
 						</a>
 					</div>
 					<?php

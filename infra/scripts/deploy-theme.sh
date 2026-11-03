@@ -48,6 +48,22 @@ log "テーマを有効化中(${TARGET_THEME})..."
 cd "$REPO_DIR/infra"
 docker compose exec -T wordpress wp theme activate "${TARGET_THEME}" --path=/var/www/html --allow-root
 
+# 静的ファイル(CSS/JS/画像)のURLをデプロイで変えないため、wp-content/ikuty-theme-current に
+# 現在の世代へのリンクを張る(テーマ側は functions.php の ikuty_theme_asset_uri() がこのURLを使う)。
+# PHPのopcacheとrealpathキャッシュの影響を避けるため、PHPが読むテーマ自体は従来どおり世代ごとのディレクトリ。
+# themes/ の外に置くのは、WordPressにテーマとして認識させず、下の世代削除の対象にもしないため。
+# リンクの付け替えは、一時リンクを作ってから mv -T で置き換えて、一瞬も欠けないようにする。
+log "静的ファイル用のリンクを更新中(ikuty-theme-current -> ${TARGET_THEME})..."
+docker run --rm \
+    -v wordpress-infra_wp_data:/var/www/html \
+    alpine:latest \
+    sh -c "
+        set -e
+        cd /var/www/html/wp-content
+        ln -sfn themes/${TARGET_THEME} .ikuty-theme-current.tmp
+        mv -fT .ikuty-theme-current.tmp ikuty-theme-current
+    "
+
 log "古い世代を削除中(直近 ${KEEP_GENERATIONS} 世代を保持)..."
 docker run --rm \
     -v wordpress-infra_wp_data:/var/www/html \

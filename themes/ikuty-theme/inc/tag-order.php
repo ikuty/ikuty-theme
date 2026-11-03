@@ -266,9 +266,9 @@ function enqueue_tag_order_scripts( $hook ) {
     wp_enqueue_script( 'jquery-ui-sortable' );
     wp_enqueue_script( 
         'tag-order-admin', 
-        get_template_directory_uri() . '/js/tag-order-admin.js', 
+        ikuty_theme_asset_uri( 'js/tag-order-admin.js' ), 
         array( 'jquery', 'jquery-ui-sortable' ), 
-        _S_VERSION, 
+        ikuty_theme_asset_ver( 'js/tag-order-admin.js' ), 
         true 
     );
     

@@ -188,10 +188,63 @@ function ikuty_theme_widgets_init() {
 add_action( 'widgets_init', 'ikuty_theme_widgets_init' );
 
 /**
+ * テーマの静的ファイル(CSS/JS/画像)のURLを返す。
+ *
+ * テーマはデプロイごとに themes/ikuty-theme-<sha> へ配置されるため、get_template_directory_uri() の
+ * URLはデプロイのたびに変わり、1年キャッシュされた全アセットが取り直しになる。
+ * デプロイスクリプトが wp-content/ikuty-theme-current に現在の世代へのリンクを張るので、
+ * それが現在有効なテーマと同じ実体を指している場合に限り、デプロイで変わらないそのURLを返す。
+ * 手動のロールバックでリンクを付け替え忘れた場合や、ローカル開発(リンクなし)では、従来のURLに戻す。
+ *
+ * @param string $path テーマ直下からの相対パス(例: img/x.png)。
+ * @return string
+ */
+function ikuty_theme_asset_uri( $path ) {
+	static $use_alias = null;
+	if ( null === $use_alias ) {
+		$alias     = WP_CONTENT_DIR . '/ikuty-theme-current';
+		$real      = realpath( $alias );
+		$use_alias = ( false !== $real && realpath( get_template_directory() ) === $real );
+	}
+
+	$base = $use_alias ? content_url( 'ikuty-theme-current' ) : get_template_directory_uri();
+	return $base . '/' . ltrim( $path, '/' );
+}
+
+/**
+ * テーマの静的ファイルのバージョン(内容のハッシュ)を返す。
+ *
+ * nginxが静的ファイルを1年・immutableでキャッシュするため、URLが同じままでは内容を変えても
+ * 反映されない。内容が変わったときだけURLを変えるため、ハッシュを使う。
+ * 更新日時はデプロイのコピーで変わるので使わない。
+ *
+ * @param string $path テーマ直下からの相対パス。
+ * @return string
+ */
+function ikuty_theme_asset_ver( $path ) {
+	static $cache = array();
+	if ( ! isset( $cache[ $path ] ) ) {
+		$hash           = @md5_file( get_template_directory() . '/' . ltrim( $path, '/' ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$cache[ $path ] = $hash ? substr( $hash, 0, 10 ) : _S_VERSION;
+	}
+	return $cache[ $path ];
+}
+
+/**
+ * バージョン付きのテーマの静的ファイルのURLを返す(imgタグなどに直接書く場合用)。
+ *
+ * @param string $path テーマ直下からの相対パス。
+ * @return string
+ */
+function ikuty_theme_asset_url( $path ) {
+	return ikuty_theme_asset_uri( $path ) . '?ver=' . ikuty_theme_asset_ver( $path );
+}
+
+/**
  * Enqueue scripts and styles.
  */
 function ikuty_theme_scripts() {
-	wp_enqueue_style( 'ikuty-theme-style', get_stylesheet_uri(), array(), _S_VERSION );
+	wp_enqueue_style( 'ikuty-theme-style', ikuty_theme_asset_uri( 'style.css' ), array(), ikuty_theme_asset_ver( 'style.css' ) );
 	wp_style_add_data( 'ikuty-theme-style', 'rtl', 'replace' );
 
 	// Conditionally load Prism.js only on single posts with code blocks
@@ -208,12 +261,12 @@ function ikuty_theme_scripts() {
 		}
 	}
 
-	wp_enqueue_script( 'ikuty-theme-navigation', get_template_directory_uri() . '/js/navigation.js', array(), _S_VERSION, true );
+	wp_enqueue_script( 'ikuty-theme-navigation', ikuty_theme_asset_uri( 'js/navigation.js' ), array(), ikuty_theme_asset_ver( 'js/navigation.js' ), true );
 	
 	// Only load tech features on single posts
 	if ( is_single() ) {
-		wp_enqueue_script( 'ikuty-theme-tech', get_template_directory_uri() . '/js/tech-features.js', array('jquery'), _S_VERSION, true );
-		wp_enqueue_script( 'ikuty-theme-floating-banner', get_template_directory_uri() . '/js/floating-banner.js', array('jquery'), _S_VERSION, true );
+		wp_enqueue_script( 'ikuty-theme-tech', ikuty_theme_asset_uri( 'js/tech-features.js' ), array('jquery'), ikuty_theme_asset_ver( 'js/tech-features.js' ), true );
+		wp_enqueue_script( 'ikuty-theme-floating-banner', ikuty_theme_asset_uri( 'js/floating-banner.js' ), array('jquery'), ikuty_theme_asset_ver( 'js/floating-banner.js' ), true );
 	}
 
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
@@ -237,11 +290,9 @@ function ikuty_theme_default_thumbnail_html( $attr = array() ) {
 		$has_webp = file_exists( get_template_directory() . '/img/default.webp' );
 	}
 
-	$uri = get_template_directory_uri();
-
 	// 画像の実寸を width/height に指定し、読み込み前後のレイアウトのずれを防ぐ
 	$img_attr = array(
-		'src'      => $uri . '/img/default.png',
+		'src'      => ikuty_theme_asset_url( 'img/default.png' ),
 		'width'    => 660,
 		'height'   => 372,
 		'alt'      => isset( $attr['alt'] ) ? $attr['alt'] : '',
@@ -264,7 +315,7 @@ function ikuty_theme_default_thumbnail_html( $attr = array() ) {
 		return $img;
 	}
 
-	return '<picture><source srcset="' . esc_url( $uri . '/img/default.webp' ) . '" type="image/webp" />' . $img . '</picture>';
+	return '<picture><source srcset="' . esc_url( ikuty_theme_asset_url( 'img/default.webp' ) ) . '" type="image/webp" />' . $img . '</picture>';
 }
 
 /**
@@ -832,7 +883,7 @@ function add_ogp_meta_tags() {
 			$image = get_the_post_thumbnail_url( null, 'large' );
 		} else {
 			// Fallback to default image
-			$image = get_template_directory_uri() . '/img/default.png';
+			$image = ikuty_theme_asset_uri( 'img/default.png' );
 		}
 		
 		echo '<meta property="og:image" content="' . esc_url( $image ) . '" />' . "\n";
@@ -877,7 +928,7 @@ function clink_shortcode( $atts ) {
 		$post = get_post($post_id);
 		$thumbnail_id = get_post_thumbnail_id($post_id);
 		if ( empty( $thumbnail_id ) ) {
-			$thumbnail_url = get_template_directory_uri() . '/img/default.png';
+			$thumbnail_url = ikuty_theme_asset_url( 'img/default.png' );
 			// 既定画像は ikuty_theme_default_thumbnail_html() でWebP対応のHTMLにする。
 			// altはエスケープ前の値を渡す(関数内でエスケープするため、$title は使わない)
 			$default_thumbnail_alt = get_the_title( $post_id );
