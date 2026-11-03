@@ -115,7 +115,7 @@ ikuty-theme/infra/
 ├── docker-compose.yml          # Docker Compose設定
 ├── .env                       # 環境変数
 ├── nginx/                     # nginx設定
-│   ├── nginx.conf
+│   ├── conf.d/                # http共通設定(00-http.conf)。nginx.confはイメージ標準を使う
 │   ├── sites-available/
 │   ├── sites-enabled/
 │   └── snippets/
@@ -343,8 +343,8 @@ docker compose run --rm --no-deps certbot certonly --webroot --webroot-path=/var
 - 事前にDNSのAレコードが対象のVPSを指している必要があります
 - ACMEのチャレンジは、port 80の既存serverブロック(`server_name _`)が`/.well-known/acme-challenge/`を受けるため、nginx設定の変更なしで通ります
 - 発行した証明書は、既存の`ssl-renew.sh`(`certbot renew`)が全lineageまとめて更新するため、追加の設定は不要です
-- `nginx.conf`の`include`はファイルを個別に指定しているため、新しい設定ファイルを`sites-enabled/`に置いただけでは読み込まれません。`include`行を追加してください
-- `nginx.conf`は単一ファイルとしてbind mountされています。変更をデプロイした後は、コンテナが古い内容を見続けることがあるため、`docker exec wordpress-nginx md5sum /etc/nginx/nginx.conf`とホスト上の`md5sum nginx/nginx.conf`を比較し、一致しなければ`docker compose up -d --force-recreate nginx`で再作成します(`restart`では解消しません)
+- `conf.d/00-http.conf`の`include`はファイルを個別に指定しているため、新しい設定ファイルを`sites-enabled/`に置いただけでは読み込まれません。`include`行を追加してください(globにしないのは、読み込み順で443番ポートの既定のserverブロックが決まるためです。詳細は`00-http.conf`のコメント)
+- 設定ファイルの変更は、`nginx -t`で確認してから`nginx -s reload`で反映します(コンテナの再作成は不要です)
 
 ### バックアップ・復旧
 
@@ -458,37 +458,46 @@ $W find /var/www/html -name "*.php" -mtime -4 -not -path "*/wp-content/themes/ik
 
 `infra/nginx/`配下の変更は、GitHub Actionsの自動デプロイの対象外です。サーバーで最新を取得したうえで、**変更したファイルによって反映の方法が異なります。**
 
-| 変更したファイル | 反映の方法 |
+すべての設定ファイルが、ディレクトリ単位でマウントされています。**どのファイルを変更しても、`nginx -s reload`(無停止)で反映されます。**
+
+| 設定の置き場所 | 内容 |
 |---|---|
-| `sites-enabled/`・`sites-available/`・`snippets/`の中のファイル | `nginx -s reload`(無停止) |
-| `nginx.conf` | `docker compose up -d --force-recreate nginx`(1〜2秒、HTTP/HTTPSが停止) |
+| `conf.d/00-http.conf` | httpコンテキストの共通設定(gzip、SSL、レート制限など)と、`sites-enabled/`の個別のinclude |
+| `sites-enabled/`・`sites-available/`・`snippets/` | サイトごとの設定 |
+
+`nginx.conf`自体は、リポジトリで管理していません(イメージ標準のものを使い、その`http`ブロックが`/etc/nginx/conf.d/*.conf`を読み込みます)。
 
 ```bash
 cd ~/ikuty-theme && git fetch -q origin dev && git reset --hard origin/dev && cd infra
 
-# sites-enabled 等を変更した場合
 docker compose exec -T nginx nginx -t              # 構文確認(警告が無く successful であること)
 docker compose exec -T nginx nginx -s reload
+```
 
-# nginx.conf を変更した場合(reload ではなく、コンテナを作り直す)
-docker compose up -d --force-recreate nginx
+**`docker-compose.yml`を変更した場合(マウントの追加など)は、コンテナの作り直しが必要です。**
+
+```bash
+docker compose up -d --force-recreate nginx        # 1〜2秒、HTTP/HTTPSが停止
 docker compose exec -T nginx nginx -t
 ```
 
-**`nginx.conf`の変更に`nginx -s reload`や`docker compose restart nginx`は使えません。** `docker-compose.yml`が`nginx.conf`を**ファイル単位**でマウントしている(`./nginx/nginx.conf:/etc/nginx/nginx.conf:ro`)ためです。
+注意点:
+
+- **イメージ標準の`nginx.conf`と重複する設定は、`00-http.conf`に書けません。** `log_format main`、`access_log`、`sendfile`、`keepalive_timeout`、`default_type`は標準側で設定済みで、重複すると`nginx -t`がエラーになります(`00-http.conf`の冒頭のコメント参照)。標準側の値を変えたい場合は、`nginx:alpine`の標準の`nginx.conf`との差分を確認してください
+- **`http`の外(`user`、`worker_processes`、`events`など)は、`conf.d/`から変更できません。** 変更が必要になった場合は、`nginx.conf`を自前で管理する構成に戻す必要があります(その場合は、ファイル単位のマウントの制約が再び生じます)
+- `00-http.conf`は`error_log`をhttpコンテキストで`warn`にしています。メインコンテキスト(起動・終了のメッセージなど)は、イメージ標準の`notice`です
+- `nginx:alpine`は固定のタグではないため、イメージの更新で標準の`nginx.conf`が変わる可能性があります。更新後は`nginx -t`を確認してください
+
+### 補足: なぜファイル単位のマウントをやめたのか
+
+以前は`nginx.conf`をファイル単位でマウントしていました(`./nginx/nginx.conf:/etc/nginx/nginx.conf:ro`)。
 
 - Dockerはファイル単位のマウントを、コンテナ作成時のファイルの実体(inode)に紐づけます。
 - `git reset`や`git pull`は、ファイルを書き換えるのではなく、新しいファイルで置き換えます。コンテナ側は古い実体を指したままになり、ホストとコンテナで内容が食い違います。
 - `nginx -t`と`nginx -s reload`は、コンテナ内の(古い)内容を読むため、変更が反映されず、構文確認でも変更前の内容が検査されます。
-- ディレクトリ単位のマウントは、中のファイルを名前で引き直すため、置き換えても反映されます。`sites-enabled/`などが`reload`で反映されるのはこのためです。
+- ディレクトリ単位のマウントは、中のファイルを名前で引き直すため、置き換えても反映されます。
 
-`nginx.conf`が反映されているかは、ホストとコンテナの内容を比較して確認できます。
-
-```bash
-diff nginx/nginx.conf <(docker compose exec -T nginx cat /etc/nginx/nginx.conf) && echo "同じ内容"
-```
-
-実例: 2026-10に`ssl_stapling`を`nginx.conf`から削除した際、`reload`では警告が消えず、コンテナの作り直しで解消しました。根本的には、`nginx.conf`の内容を`conf.d/`のようなディレクトリに移し、ディレクトリ単位でマウントすれば、`reload`だけで済みます(未実施)。
+実例: 2026-10に`ssl_stapling`を削除した際、`reload`では警告が消えず、コンテナの作り直しが必要でした。この問題を、#28で`conf.d/`のディレクトリ単位のマウントに移すことで解消しました。
 
 ## セキュリティ設定
 
