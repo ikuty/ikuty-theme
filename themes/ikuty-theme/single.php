@@ -15,28 +15,28 @@ get_header();
 		<div class="floating-banner-item">
 			<a href="https://twitter.com/intent/tweet?text=<?php echo urlencode(get_the_title()); ?>&url=<?php echo urlencode(get_permalink()); ?>&via=tw_ikuty" target="_blank" rel="noopener noreferrer">
 				<div class="banner-placeholder">
-					<img src="<?php echo get_template_directory_uri(); ?>/img/x.png" alt="X share" />
+					<img src="<?php echo esc_url( ikuty_theme_asset_url( 'img/x.png' ) ); ?>" alt="X share" />
 				</div>
 			</a>
 		</div>
 		<div class="floating-banner-item">
 			<a href="https://bsky.app/intent/compose?text=<?php echo urlencode(get_the_title()); echo urlencode(get_permalink());?>" target="_blank" rel="noopener noreferrer">
 				<div class="banner-placeholder">
-					<img src="<?php echo get_template_directory_uri(); ?>/img/bsky.png" alt="Bluesky share" />
+					<img src="<?php echo esc_url( ikuty_theme_asset_url( 'img/bsky.png' ) ); ?>" alt="Bluesky share" />
 				</div>
 			</a>
 		</div>
 		<div class="floating-banner-item">
 			<a href="https://www.facebook.com/share.php?u=<?php echo urlencode(get_permalink()); ?>" target="_blank" rel="noopener noreferrer">
 				<div class="banner-placeholder">
-					<img src="<?php echo get_template_directory_uri(); ?>/img/fb.png" alt="Facebook share" />
+					<img src="<?php echo esc_url( ikuty_theme_asset_url( 'img/fb.png' ) ); ?>" alt="Facebook share" />
 				</div>
 			</a>
 		</div>
 		<div class="floating-banner-item">
 			<a href="http://b.hatena.ne.jp/add?mode=confirm&url=<?php echo urlencode(get_permalink()); ?>&title=<?php echo urlencode(get_permalink()); ?>" target="_blank" rel="noopener noreferrer">
 				<div class="banner-placeholder">
-					<img src="<?php echo get_template_directory_uri(); ?>/img/hatena.png" alt="Hatena bookmark share" />
+					<img src="<?php echo esc_url( ikuty_theme_asset_url( 'img/hatena.png' ) ); ?>" alt="Hatena bookmark share" />
 				</div>
 			</a>
 		</div>
