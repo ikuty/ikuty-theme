@@ -540,7 +540,7 @@ crontabでSSL証明書の自動更新を設定：
 ### ログ監視
 
 ```bash
-# nginx アクセスログ
+# nginx アクセスログ(直近分。コンテナを再作成すると消える)
 docker-compose logs nginx
 
 # PHP-FPMログ
@@ -652,9 +652,33 @@ curl -o /dev/null -s -w "%{time_total}\n" http://localhost
    - アップロードディレクトリ権限確認: `docker-compose exec wordpress ls -la /var/www/html/wp-content/uploads`
    - PHP設定確認: `docker-compose exec wordpress php -i | grep upload_max_filesize`
 
+### nginxアクセスログの保存とローテーション
+
+アクセスログは、標準出力(`docker logs`)に加えて、`nginx_logs` ボリューム上の `access-detail.log` にも書きます。コンテナを再作成してもファイルは残ります(`access.log` はイメージ由来の標準出力へのシンボリックリンクなので、使いません)。
+
+- 形式: `log_format main` に `host=`(Host)と `rt=`(応答時間、秒)を足したもの。リクエスト本文と認証ヘッダは記録しません
+- 場所(サーバー): `/var/lib/docker/volumes/wordpress-infra_nginx_logs/_data/access-detail.log`
+- 設定: `nginx/conf.d/00-http.conf`。反映は `nginx -s reload` だけです
+
+ローテーション(日次、90日分を圧縮して保持)は、ホストのlogrotateで行います。初回に1度だけ、サーバーに設置します。
+
+```bash
+sudo cp ~/ikuty-theme/infra/logrotate/ikuty-nginx /etc/logrotate.d/ikuty-nginx
+sudo chmod 644 /etc/logrotate.d/ikuty-nginx
+sudo logrotate -d /etc/logrotate.d/ikuty-nginx   # 構文と動作の確認(実際には回さない)
+```
+
+確認の例:
+
+```bash
+sudo tail -f /var/lib/docker/volumes/wordpress-infra_nginx_logs/_data/access-detail.log
+# Googlebotの応答コード別の件数
+sudo grep Googlebot /var/lib/docker/volumes/wordpress-infra_nginx_logs/_data/access-detail.log | awk '{print $9}' | sort | uniq -c
+```
+
 ### ログファイルの場所
 
-- nginx: `docker-compose logs nginx`
+- nginx: `docker-compose logs nginx`(直近分)、`access-detail.log`(上記。ボリューム上、90日保持)
 - PHP-FPM: `docker-compose logs wordpress`
 - MySQL: `docker-compose logs mysql`
 - SSL更新: `/var/log/ssl-renew.log`
