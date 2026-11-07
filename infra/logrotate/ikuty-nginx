@@ -1,0 +1,16 @@
+# nginxのアクセスログ(nginx_logs ボリューム上)のローテーション設定。
+# サーバーの /etc/logrotate.d/ikuty-nginx に設置する(手順は infra/README.md)。
+# 日次で回し、90日分を圧縮して保持する。回したあとは nginx -s reopen で新しいファイルに書き直させる。
+/var/lib/docker/volumes/wordpress-infra_nginx_logs/_data/access-detail.log {
+    daily
+    rotate 90
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 root root
+    sharedscripts
+    postrotate
+        docker exec wordpress-nginx nginx -s reopen >/dev/null 2>&1 || true
+    endscript
+}
