@@ -38,4 +38,4 @@ docker run --rm -v "$PWD":/repo -w /repo composer:2 php -d memory_limit=1G ci/ve
 
 ## 限界
 
-静的解析なので、実行時にだけ起きる問題(実際に `null` が渡る経路など)は検出できません。また、本番では `WP_DEBUG` が無効のため、`E_DEPRECATED` と `E_NOTICE` はログに出ません。ローカルで `WP_DEBUG_LOG` を有効にして主要ページを巡回する確認を、別途行ってください。
+静的解析なので、実行時にだけ起きる問題(実際に `null` が渡る経路など)は検出できません。また、本番では `WP_DEBUG` が無効のため、`E_DEPRECATED` と `E_NOTICE` はログに出ません。ローカルで `WP_DEBUG_LOG` を有効にして主要ページを巡回する確認(`ci/debug-crawl/`、手順は `ci/debug-crawl/README.md`)を、別途行ってください。PHPを更新するたびに再実行します。
