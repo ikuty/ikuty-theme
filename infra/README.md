@@ -499,6 +499,44 @@ docker compose exec -T nginx nginx -t
 
 実例: 2026-10に`ssl_stapling`を削除した際、`reload`では警告が消えず、コンテナの作り直しが必要でした。この問題を、#28で`conf.d/`のディレクトリ単位のマウントに移すことで解消しました。
 
+### 補足: Docker aptリポジトリの鍵の管理(サーバー側の設定)
+
+サーバーのaptの設定はリポジトリの管理外です。Dockerのリポジトリの鍵は、レガシーの `/etc/apt/trusted.gpg` ではなく、`/etc/apt/keyrings/docker.asc` に置き、`/etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list` の `signed-by` で指定しています(#32、2026-11-07に移行済み)。
+
+```
+deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable
+```
+
+サーバーを作り直すときは、Docker公式の手順(`https://download.docker.com/linux/ubuntu/gpg` を `/etc/apt/keyrings/docker.asc` に保存)に従い、`apt-key add` は使いません。鍵のフィンガープリントは `9DC858229FC7DD38854AE2D88D81803C0EBFCD88` です。
+
+移行の手順(参考。aptの設定のみで、コンテナは再起動しない):
+
+```bash
+# 1. バックアップ
+B=~/apt-backup-$(date +%Y%m%d%H%M%S); mkdir -p $B
+sudo cp -a /etc/apt/trusted.gpg /etc/apt/sources.list.d $B/
+
+# 2. trusted.gpg 内の鍵を書き出し、フィンガープリントを確認
+sudo install -d -m 0755 /etc/apt/keyrings
+gpg --no-default-keyring --keyring /etc/apt/trusted.gpg --export --armor 8D81803C0EBFCD88 \
+  | sudo tee /etc/apt/keyrings/docker.asc >/dev/null
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+gpg --show-keys --with-colons /etc/apt/keyrings/docker.asc | grep ^fpr | head -1
+
+# 3. signed-by を追加
+sudo sed -i 's#^deb \[arch=amd64\] #deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] #' \
+  /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
+
+# 4. 新しい鍵で更新できることを確認してから、trusted.gpg の鍵を削除
+sudo apt-get update
+sudo gpg --no-default-keyring --keyring /etc/apt/trusted.gpg --batch --yes --delete-keys 8D81803C0EBFCD88
+
+# 5. 警告が出ないこと、候補が表示されることを確認
+sudo apt-get update && apt-cache policy docker-ce | head -3
+```
+
+失敗した場合は、バックアップの `trusted.gpg` と `sources.list.d` を戻します。
+
 ## セキュリティ設定
 
 ### ファイアウォール設定例
